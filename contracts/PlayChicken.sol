@@ -1,14 +1,13 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+// SPDX-License-Identifier: AGPL-3.0
+pragma solidity ^0.8.20;
 
-contract Counter {
-    uint256 public number;
-
-    function setNumber(uint256 newNumber) public {
-        number = newNumber;
+contract PlayChicken {
+    uint256 public constant BPS = 10000;
+    
+    struct Chicken {
+        address token;
     }
 
-    function increment() public {
-        number++;
-    }
+    uint256 public protocolFee; // protocol fee in bps
+
 }

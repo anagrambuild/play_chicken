@@ -2,23 +2,17 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {Counter} from "../src/Counter.sol";
+import {PlayChicken} from "../contracts/PlayChicken.sol";
 
-contract CounterTest is Test {
-    Counter public counter;
+contract PlayChickenTest is Test {
+    PlayChicken public playChicken;
 
     function setUp() public {
-        counter = new Counter();
-        counter.setNumber(0);
+        playChicken = new PlayChicken();
     }
 
-    function test_Increment() public {
-        counter.increment();
-        assertEq(counter.number(), 1);
+    function testBPSis10000() public {
+        assertEq(playChicken.BPS(), 10000);
     }
 
-    function testFuzz_SetNumber(uint256 x) public {
-        counter.setNumber(x);
-        assertEq(counter.number(), x);
-    }
 }
