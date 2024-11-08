@@ -42,17 +42,21 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
     error ChickenDepositNotAuthorized(uint256 _minimum);
     error PlayerIsNotInChickenPool(address player);
 
+    uint256 public protocolFee; // protocol fee in bps
+
     struct Chicken {
         address token;
         uint256 start;
         uint256 end;
         uint256 rewardAmount;
+        uint256 rewardDistributed;
+        uint256 claimCount;
         uint256 totalDeposits;
         uint256 minimumDeposit;
     }
 
-    uint256 public protocolFee; // protocol fee in bps
     uint256 public chickenCount;
+
     mapping(uint256 => Chicken) public chickens;
     mapping(uint256 => EnumerableSet.AddressSet) internal players;
     mapping(uint256 => mapping(address => uint256)) internal playerBalance;
@@ -110,6 +114,7 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
         chicken.start = _start;
         chicken.end = _end;
         chicken.rewardAmount = _rewardAmount;
+        chicken.rewardDistributed = 0;
         chicken.totalDeposits = 0;
         chicken.minimumDeposit = _minimumDeposit;
         emit ChickenStarted(chickenCount, _start, _end, _rewardAmount, _token, msg.sender);
@@ -145,9 +150,18 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
         require(isPlayer(_chickenId, msg.sender), PlayerIsNotInChickenPool(msg.sender));
 
         uint256 playerDeposit = balance(_chickenId, msg.sender);
-        uint256 playerPortion = playerDeposit * BPS / chicken.totalDeposits;
+        uint256 rewardAmount = 0;
+        if (getPlayerCount(_chickenId) - chicken.claimCount == 1) {
+            // last player remaining - get all the remaining reward including dust
+            rewardAmount = chicken.rewardAmount - chicken.rewardDistributed;
+        } else {
+            uint256 playerPortion = playerDeposit * BPS / chicken.totalDeposits;
+            rewardAmount = (chicken.rewardAmount * playerPortion) / BPS;
+        }
 
-        uint256 rewardAmount = (chicken.rewardAmount * playerPortion) / BPS;
+        chicken.rewardDistributed += rewardAmount;
+        chicken.claimCount++;
+
         SafeERC20.safeTransfer(IERC20(chicken.token), msg.sender, playerDeposit + rewardAmount);
         emit PlayerClaimedReward(_chickenId, msg.sender, rewardAmount);
     }
@@ -186,7 +200,7 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
         onlyValidChickenPool(_chickenId)
     {
         Chicken storage chicken = chickens[_chickenId];
-        uint256 feeBalance = getProtocolFeeBalance(_chickenId);
+        uint256 feeBalance = chicken.rewardAmount * protocolFee / BPS;
         SafeERC20.safeTransfer(IERC20(chicken.token), msg.sender, feeBalance);
         emit ProtocolFeeWithdrawn(feeBalance, chicken.token);
     }
@@ -236,7 +250,7 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
      * Get protocol fee balance for a chicken pool
      * @param _chickenId id of the chicken pool
      */
-    function getProtocolFeeBalance(uint256 _chickenId) public view returns (uint256) {
+    function getProtocolFeeBalance(uint256 _chickenId) external view returns (uint256) {
         Chicken storage chicken = chickens[_chickenId];
         return chicken.rewardAmount * protocolFee / BPS;
     }
