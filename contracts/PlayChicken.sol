@@ -3,15 +3,15 @@ pragma solidity ^0.8.20;
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
-import {AddressSet} from "./AddressSet.sol";
-
 contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
     using SafeERC20 for IERC20;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
     bytes32 public constant PROTOCOL_ROLE = keccak256("PROTOCOL_ROLE");
 
@@ -49,13 +49,16 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
         uint256 rewardAmount;
         uint256 totalDeposits;
         uint256 minimumDeposit;
-        AddressSet players;
-        mapping(address => uint256) playerBalance;
     }
 
     uint256 public protocolFee; // protocol fee in bps
-    mapping(uint256 => Chicken) public chickens;
     uint256 public chickenCount;
+    mapping(uint256 => Chicken) public chickens;
+    mapping(uint256 => EnumerableSet.AddressSet) internal players;
+    mapping(uint256 => mapping(address => uint256)) internal playerBalance;
+
+    // Reserve 50 slots for future upgrades
+    uint256[50] private __gap;
 
     modifier onlyValidChickenPool(uint256 _chickenId) {
         require(_chickenId > 0 && _chickenId <= chickenCount, ChickenIdInvalid(_chickenId));
@@ -109,8 +112,6 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
         chicken.rewardAmount = _rewardAmount;
         chicken.totalDeposits = 0;
         chicken.minimumDeposit = _minimumDeposit;
-        chicken.players = new AddressSet();
-
         emit ChickenStarted(chickenCount, _start, _end, _rewardAmount, _token, msg.sender);
     }
 
@@ -127,11 +128,9 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
         require(_depositAmount <= authorizedAmount, ChickenDepositNotAuthorized(chicken.minimumDeposit));
         SafeERC20.safeTransferFrom(IERC20(chicken.token), msg.sender, address(this), _depositAmount);
         chicken.totalDeposits += _depositAmount;
-        chicken.playerBalance[msg.sender] += _depositAmount;
+        playerBalance[_chickenId][msg.sender] += _depositAmount;
 
-        if (!chicken.players.contains(msg.sender)) {
-            chicken.players.add(msg.sender);
-        }
+        addPlayerIfNotExists(_chickenId, msg.sender);
         emit PlayerJoined(_chickenId, msg.sender, chicken.totalDeposits);
     }
 
@@ -142,10 +141,10 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
      */
     function claim(uint256 _chickenId) external nonReentrant onlyValidChickenPool(_chickenId) {
         Chicken storage chicken = chickens[_chickenId];
-        require(chicken.end < block.number || chicken.players.size() == 1, ChickenNotFinished());
-        require(chicken.players.contains(msg.sender), PlayerIsNotInChickenPool(msg.sender));
+        require(chicken.end < block.number || getPlayerCount(_chickenId) == 1, ChickenNotFinished());
+        require(isPlayer(_chickenId, msg.sender), PlayerIsNotInChickenPool(msg.sender));
 
-        uint256 playerDeposit = chicken.playerBalance[msg.sender];
+        uint256 playerDeposit = balance(_chickenId, msg.sender);
         uint256 playerPortion = playerDeposit * BPS / chicken.totalDeposits;
 
         uint256 rewardAmount = (chicken.rewardAmount * playerPortion) / BPS;
@@ -156,21 +155,23 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
     /**
      * Chicken out!
      * Retrieve your deposit prior to expiration of the chicken pool
+     * @dev If player is last remaining player, or pool is ended, the player must
+     * claim reward instead of withdrawing
      * @param _chickenId id of the chicken pool
      */
     function withdraw(uint256 _chickenId) external nonReentrant onlyValidChickenPool(_chickenId) {
         Chicken storage chicken = chickens[_chickenId];
-        require(block.number < chicken.end, ChickenFinished());
-        require(chicken.players.contains(msg.sender), PlayerIsNotInChickenPool(msg.sender));
+        require(block.number < chicken.end && getPlayerCount(_chickenId) > 1, ChickenFinished());
+        require(isPlayer(_chickenId, msg.sender), PlayerIsNotInChickenPool(msg.sender));
 
-        uint256 playerBalance = chicken.playerBalance[msg.sender];
-        chicken.totalDeposits -= playerBalance;
-        chicken.playerBalance[msg.sender] = 0;
-        delete chicken.playerBalance[msg.sender];
-        chicken.players.erase(msg.sender);
+        uint256 currentBalance = playerBalance[_chickenId][msg.sender];
+        chicken.totalDeposits -= currentBalance;
+        playerBalance[_chickenId][msg.sender] = 0;
+        delete playerBalance[_chickenId][msg.sender];
+        removePlayer(_chickenId, msg.sender);
 
-        SafeERC20.safeTransfer(IERC20(chicken.token), msg.sender, playerBalance);
-        emit PlayerChickendOut(_chickenId, msg.sender, playerBalance);
+        SafeERC20.safeTransfer(IERC20(chicken.token), msg.sender, currentBalance);
+        emit PlayerChickendOut(_chickenId, msg.sender, currentBalance);
     }
 
     /**
@@ -209,17 +210,7 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
         onlyValidChickenPool(_chickenId)
         returns (uint256)
     {
-        Chicken storage chicken = chickens[_chickenId];
-        return chicken.playerBalance[_player];
-    }
-    /**
-     * Get number of players in the chicken pool
-     * @param _chickenId id of the chicken pool
-     */
-
-    function remainingPlayers(uint256 _chickenId) external view onlyValidChickenPool(_chickenId) returns (uint256) {
-        Chicken storage chicken = chickens[_chickenId];
-        return chicken.players.size();
+        return playerBalance[_chickenId][_player];
     }
 
     /**
@@ -248,5 +239,30 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
     function getProtocolFeeBalance(uint256 _chickenId) public view returns (uint256) {
         Chicken storage chicken = chickens[_chickenId];
         return chicken.rewardAmount * protocolFee / BPS;
+    }
+
+    /**
+     * @return true if player is in the chicken pool
+     */
+    function isPlayer(uint256 _chickenId, address _player) public view returns (bool) {
+        return players[_chickenId].contains(_player);
+    }
+
+    /**
+     *  @param _chickenId id of the chicken pool
+     * @return uint256 number of players in the chicken pool
+     */
+    function getPlayerCount(uint256 _chickenId) public view returns (uint256) {
+        return players[_chickenId].length();
+    }
+
+    function removePlayer(uint256 _chickenId, address _player) internal {
+        players[_chickenId].remove(_player);
+    }
+
+    function addPlayerIfNotExists(uint256 _chickenId, address _player) internal {
+        if (!isPlayer(_chickenId, _player)) {
+            players[_chickenId].add(_player);
+        }
     }
 }

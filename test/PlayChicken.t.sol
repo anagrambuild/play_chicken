@@ -152,7 +152,7 @@ contract PlayChickenTest is Test {
         vm.prank(PROTOCOL);
         chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, REWARD_AMOUNT, DEPOSIT_AMOUNT);
         assertEq(chickenPool.chickenCount(), 1);
-        (address token, uint256 start, uint256 end, uint256 rewardAmount, uint256 totalBalance, uint256 minimumDeposit,)
+        (address token, uint256 start, uint256 end, uint256 rewardAmount, uint256 totalBalance, uint256 minimumDeposit)
         = chickenPool.chickens(1);
         assertEq(token, MEME_TOKEN);
         assertEq(start, block.number + 1);
@@ -230,7 +230,7 @@ contract PlayChickenTest is Test {
         vm.stopPrank();
         assertEq(memeToken.balanceOf(PLAYER1), 10 * DEPOSIT_AMOUNT - DEPOSIT_AMOUNT);
         assertEq(memeToken.balanceOf(CHICKEN_POOL), requiredSpend + DEPOSIT_AMOUNT);
-        (,,,, uint256 totalBalance,,) = chickenPool.chickens(1);
+        (,,,, uint256 totalBalance,) = chickenPool.chickens(1);
         assertEq(totalBalance, DEPOSIT_AMOUNT);
         assertEq(chickenPool.totalDeposits(1), DEPOSIT_AMOUNT);
         assertEq(chickenPool.balance(1, PLAYER1), DEPOSIT_AMOUNT);
@@ -347,6 +347,7 @@ contract PlayChickenTest is Test {
         chickenPool.join(1, DEPOSIT_AMOUNT);
         vm.stopPrank();
         vm.roll(block.number + 3);
+        // player should claim rather than withdraw
         vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenFinished.selector));
         vm.prank(PLAYER1);
         chickenPool.withdraw(1);
@@ -362,8 +363,29 @@ contract PlayChickenTest is Test {
         memeToken.approve(CHICKEN_POOL, DEPOSIT_AMOUNT);
         chickenPool.join(1, DEPOSIT_AMOUNT);
         vm.stopPrank();
+        vm.startPrank(PLAYER2);
+        memeToken.approve(CHICKEN_POOL, DEPOSIT_AMOUNT);
+        chickenPool.join(1, DEPOSIT_AMOUNT);
+        vm.stopPrank();
         vm.roll(block.number + 1);
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.PlayerIsNotInChickenPool.selector, PLAYER2));
+        vm.expectRevert(abi.encodeWithSelector(PlayChicken.PlayerIsNotInChickenPool.selector, PLAYER3));
+        vm.prank(PLAYER3);
+        chickenPool.withdraw(1);
+    }
+
+    function testWithdrawAsWinner() public {
+        uint256 requiredSpend = REWARD_AMOUNT + REWARD_AMOUNT * chickenPool.protocolFee() / chickenPool.BPS();
+        vm.prank(PROTOCOL);
+        memeToken.approve(CHICKEN_POOL, requiredSpend);
+        vm.prank(PROTOCOL);
+        chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, REWARD_AMOUNT, DEPOSIT_AMOUNT);
+        vm.startPrank(PLAYER1);
+        memeToken.approve(CHICKEN_POOL, DEPOSIT_AMOUNT);
+        chickenPool.join(1, DEPOSIT_AMOUNT);
+        vm.stopPrank();
+        vm.roll(block.number + 1);
+        // player should claim rather than withdraw
+        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenFinished.selector));
         vm.prank(PLAYER2);
         chickenPool.withdraw(1);
     }
@@ -378,14 +400,18 @@ contract PlayChickenTest is Test {
         memeToken.approve(CHICKEN_POOL, DEPOSIT_AMOUNT);
         chickenPool.join(1, DEPOSIT_AMOUNT);
         vm.stopPrank();
+        vm.startPrank(PLAYER2);
+        memeToken.approve(CHICKEN_POOL, DEPOSIT_AMOUNT);
+        chickenPool.join(1, DEPOSIT_AMOUNT);
+        vm.stopPrank();
         vm.roll(block.number + 1);
         vm.prank(PLAYER1);
         chickenPool.withdraw(1);
         assertEq(memeToken.balanceOf(PLAYER1), 10 * DEPOSIT_AMOUNT);
-        assertEq(memeToken.balanceOf(CHICKEN_POOL), requiredSpend);
-        (,,,, uint256 totalBalance,,) = chickenPool.chickens(1);
-        assertEq(totalBalance, 0);
-        assertEq(chickenPool.totalDeposits(1), 0);
+        assertEq(memeToken.balanceOf(CHICKEN_POOL), requiredSpend + DEPOSIT_AMOUNT);
+        (,,,, uint256 totalBalance,) = chickenPool.chickens(1);
+        assertEq(totalBalance, 1);
+        assertEq(chickenPool.totalDeposits(1), 1);
         assertEq(chickenPool.balance(1, PLAYER1), 0);
     }
 
