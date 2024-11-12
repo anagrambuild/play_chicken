@@ -1,0 +1,50 @@
+name: Sepolia Testnet
+on:
+  push:
+    tags:
+      - "*"
+concurrency:
+  group: "ethereum-testnet"
+  cancel-in-progress: true
+env:
+  RPC_URL: ${{ secrets.RPC_URL }}
+  PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+  ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+  VERIFIER_URL: "https://api-sepolia.etherscan.io/api"
+  PROXY_ADMIN: "0xd9bf5f4C94dED9558f8385C90b4f372f709c1F4B"
+  PLAY_CHICKEN_PROXY: "0x896d6e05a6b74E0D82660426e25b789003C404Fd"
+  RELEASE_TAG: ${{ github.ref_name }}
+jobs:
+  check:
+    strategy:
+      fail-fast: true
+    name: play-chicken
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+      - name: forge install
+        run: |
+          forge install
+      - name: Run Forge tests
+        run: |
+          forge test -v --fail-fast
+        id: test
+      - name: GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          draft: false
+          prerelease: false
+          tag_name: ${{ github.ref_name }}
+          release_name: ${{ github.ref_name }}
+          body_path: CHANGELOG.md
+      - name: Upgrade Transparent Proxy
+        run: |
+          forge script ./script/PlayChicken.s.sol:PlayChickenDeployScript --sig 'upgradeTransparentProxy()' --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY} --verify --verifier-url ${VERIFIER_URL} --etherscan-api-key ${ETHERSCAN_API_KEY}

@@ -77,5 +77,41 @@
                 "isDefault": true
             }
         },
+        {
+            "label": "deploytransparentproxy",
+            "type": "shell",
+            "command": "forge script ./script/PlayChicken.s.sol:PlayChickenDeployScript --sig 'deployTransparentProxy()' --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY} --verify --verifier-url ${VERIFIER_URL} --etherscan-api-key ${ETHERSCAN_API_KEY}",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CHICKEN_POOL_ADMIN": "${PUBLIC_KEY}",
+                    "PROTOCOL_ADMIN": "${PUBLIC_KEY}",
+                    "VERIFIER_URL": "https://api-sepolia.etherscan.io/api",
+                }
+            },
+            "dependsOn": "test",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "upgradetransparentproxy",
+            "type": "shell",
+            "command": "forge script ./script/PlayChicken.s.sol:PlayChickenDeployScript --sig 'upgradeTransparentProxy()' --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY} --verify --verifier-url ${VERIFIER_URL} --etherscan-api-key ${ETHERSCAN_API_KEY}",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "PROXY_ADMIN": "0xd9bf5f4C94dED9558f8385C90b4f372f709c1F4B",
+                    "PLAY_CHICKEN_PROXY": "0x896d6e05a6b74E0D82660426e25b789003C404Fd",
+                    "VERIFIER_URL": "https://api-sepolia.etherscan.io/api",
+                }
+            },
+            "dependsOn": "test",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            }
+        },
     ]
 }

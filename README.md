@@ -1,6 +1,6 @@
 # Play Chicken!
 
-**Chicken Pools**** aim to enhance holding times for meme coins by introducing time-based pools where participants strategically plan their exits within shorter time frames. This shift focuses on "when to sell" rather than simply "holding for long periods," allowing for higher engagement and reward opportunities over intervals ranging from 15 minutes to 5 days. 
+**Chicken Pools** aim to enhance holding times for meme coins by introducing time-based pools where participants strategically plan their exits within shorter time frames. This shift focuses on "when to sell" rather than simply "holding for long periods," allowing for higher engagement and reward opportunities over intervals ranging from 15 minutes to 5 days. 
 
 ### Pool Mechanics & Design Considerations
 
@@ -82,12 +82,51 @@ The "Chicken Pools" smart contract provides a decentralized pool structure where
   - The "last person standing" rule incentivizes strategic exit timing and potentially maximizes returns for patient participants.
   - Consideration is given to automating USDC conversion on withdrawal for a stable payout option.
 
-2. **UI and Simulator Development**:
+- **UI and Simulator Development**:
    - The UI, developed in React, will provide a user-friendly interface for managing and monitoring chicken pools.
    - An enhanced simulator will include features such as volatile token price modeling, exponential decay patterns, and market shock scenarios.
 
-3. **Future Extensions**:
+- **Future Extensions**:
    - Considerations for social trading features, cross-pool incentives, and interactive UI components for longer-term pools may be integrated based on user feedback and market demands.
+
+
+### Deployment Details
+
+#### Deployment Instructions
+
+##### Ethereum
+
+A script is provided to fully support automated deployment of this Chicken Pool
+
+For every step, an RPC node provider and a gas fee paying EOA should be setup as follows:
+   - set an environment variable `RPC_URL` to the address of your RPC node provider
+   - set an environment variable `PRIVATE_KEY` to the address of your deployment EOA
+
+1. **Deploy a ChickenPool with TransparentUpgradeableProxy pattern**
+   - set an environment variable `CHICKEN_POOL_ADMIN` to the address of the pool administrator, a multisig or timelock is recommended
+   - set an environment variable `PROTOCOL_ADMIN` to the administrator of the protocol
+   - Notes: `CHICKEN_POOL_ADMIN` will be able to perform upgrades, while `PROTOCOL_ADMIN` will be able to make protocol changes.  
+     The EOA that invokes this call will pay the gas fees.  Be sure to make a note of the `ProxyAdmin` that is created by the Transparent Proxy.
+```shell
+$ forge script ./script/PlayChicken.s.sol:DeployPlayChickenScript --sig 'deployTransparentProxy()' --legacy --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY}
+```
+
+2. **Optional: Upgrade ChickenPool with the latest contract version**
+   - set an environment variable `PROXY_ADMIN` to the admin created previously (Step 1)
+   - set an environment variable `PLAY_CHICKEN_PROXY` to the address of the proxy deployed previously (Step 1)
+   - Notes:  Only the `CHICKEN_POOL_ADMIN` may perform this operation
+```shell
+$ forge script ./script/PlayChicken.s.sol:DeployPlayChickenScript --sig 'upgradeTransparentProxy()' --legacy --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY}
+```   
+
+### Deployment Adressess
+
+| Network | Address                                    | Contract                    | Notes                       | Verified                                                                        |
+| ------- | ------------------------------------------ | --------------------------- | --------------------------- | ------------------------------------------------------------------------------- |
+| Sepolia | 0xd9bf5f4C94dED9558f8385C90b4f372f709c1F4B | ProxyAdmin                  | Transparent Proxy Delegate  | https://sepolia.etherscan.io/address/0xd9bf5f4c94ded9558f8385c90b4f372f709c1f4b |
+| Sepolia | 0x896d6e05a6b74E0D82660426e25b789003C404Fd | TransparentUpgradeableProxy | Chicken Pool Proxy          | https://sepolia.etherscan.io/address/0x896d6e05a6b74e0d82660426e25b789003c404fd |
+| Sepolia | 0xc8b04a7EafA5022d3B54C2f11174E46267fF49fF | PlayChicken                 | Chicken Pool Implementation | https://sepolia.etherscan.io/address/0xc8b04a7eafa5022d3b54c2f11174e46267ff49ff |
+
 
 ## Foundry
 
@@ -139,7 +178,7 @@ $ anvil
 ### Deploy
 
 ```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+$ forge script ./script/PlayChicken.s.sol:DeployPlayChickenScript --sig 'deployProxyAdmin()' --legacy --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY}
 ```
 
 ### Cast
