@@ -13,3 +13,7 @@ RUN rustup default stable && \
 
 RUN rustup toolchain install nightly  && \
     rustup component add rustfmt --toolchain nightly
+
+RUN python3 -m pip install slither-analyzer --break-system-packages
+# requires intel cpu
+# RUN python3 -m pip install mythril --break-system-packages

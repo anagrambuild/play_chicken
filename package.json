@@ -1,0 +1,31 @@
+{
+  "name": "play_chicken",
+  "version": "0.0.2",
+  "description": "Chicken Pools",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "forge test",
+    "lint:sol": "solhint 'contracts/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anagrambuild/play_chicken.git"
+  },
+  "keywords": [
+    "meme",
+    "coins"
+  ],
+  "author": "Anagram Build",
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/anagrambuild/play_chicken/issues"
+  },
+  "devDependencies": {
+    "solhint": "^5.0.3"
+  },
+  "homepage": "https://github.com/anagrambuild/play_chicken#readme"
+}

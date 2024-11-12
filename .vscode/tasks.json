@@ -27,13 +27,25 @@
             }
         },
         {
-            "label": "hint",
+            "label": "lint",
             "type": "shell",
-            "command": "yarn hint",
+            "command": "npm run lint:sol",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
             "dependsOn": "fmt",
+            "group": {
+                "kind": "build"
+            }
+        },
+        {
+            "label": "slither",
+            "type": "shell",
+            "command": "python3 -m slither . --exclude-dependencies --exclude-info",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn": "lint",
             "group": {
                 "kind": "build"
             }
@@ -45,7 +57,7 @@
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "dependsOn": "fmt",
+            "dependsOn": "lint",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -71,7 +83,7 @@
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "dependsOn": "fmt",
+            "dependsOn": "lint",
             "group": {
                 "kind": "test",
                 "isDefault": true

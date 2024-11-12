@@ -1,0 +1,40 @@
+name: Mythril
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  mythril:
+    name: Mythril
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Set up node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 22
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install node dependencies
+        run: npm ci --frozen-lockfile --include=dev
+      - name: Install solc
+        run: |
+          sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.6.12/solc-static-linux
+          sudo chmod +x /usr/bin/solc
+      - name: Install mythril
+        run: |
+          pip3 install mythril
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+      - name: flatten contract
+        run: |
+          forge flatten contracts/PlayChicken.sol -o out/PlayChickenFlattened.sol
+      - name: Run mythril
+        run: myth analyze out/PlayChickenFlattened.sol
