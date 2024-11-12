@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+// solhint-disable var-name-mixedcase
+
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
-import {Test, console} from "forge-std/Test.sol";
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 
 import {PlayChicken} from "../contracts/PlayChicken.sol";
 
 import {ERC20Mock} from "./ERC20Mock.sol";
 
 contract PlayChickenTest is Test {
+    // these are used as constants but initialized in setUp
     address public CHICKEN_POOL;
     address public MEME_TOKEN;
     address public OWNER;
@@ -19,10 +21,11 @@ contract PlayChickenTest is Test {
     address public PLAYER1;
     address public PLAYER2;
     address public PLAYER3;
-    PlayChicken public chickenPool;
-    IERC20 public memeToken;
     uint256 public REWARD_AMOUNT;
     uint256 public DEPOSIT_AMOUNT;
+
+    PlayChicken public chickenPool;
+    IERC20 public memeToken;
 
     error InvalidInitialization();
 
