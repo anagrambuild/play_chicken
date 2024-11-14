@@ -6,6 +6,8 @@
 [![Lint](https://github.com/anagrambuild/play_chicken/actions/workflows/ci-lint.yml/badge.svg)](https://github.com/anagrambuild/play_chicken/actions/workflows/ci-lint.yml)
 [![Sepolia Testnet](https://github.com/anagrambuild/play_chicken/actions/workflows/sepolia-testnet.yml/badge.svg)](https://github.com/anagrambuild/play_chicken/actions/workflows/sepolia-testnet.yml)
 
+<img src="71be8af62.jpg" alt="Cartoon rooster rushing to the pool" width="25%">
+
 **Chicken Pools** aim to enhance holding times for meme coins by introducing time-based pools where participants strategically plan their exits within incentivized time frames. This shift focuses on "when to sell" rather than simply "holding for long periods," allowing for higher engagement and reward opportunities over intervals ranging from 15 minutes to 5 days. 
 
 ### Pool Mechanics & Design Considerations
