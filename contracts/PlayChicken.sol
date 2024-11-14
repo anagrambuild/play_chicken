@@ -15,16 +15,15 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
     bytes32 public constant PROTOCOL_ROLE = keccak256("PROTOCOL_ROLE");
 
     uint256 public constant BPS = 10000;
-    uint256 public constant MINIMUM_REWARD_AMOUNT = 100; // 100 token
-    uint256 public constant MINIMUM_DEPOSIT_AMOUNT = 1; // 1 token
+    uint256 public constant BASE_AMOUNT = 10 ** 18;
+    uint256 public constant MINIMUM_REWARD_AMOUNT = 100 * BASE_AMOUNT; // 100 token
+    uint256 public constant MINIMUM_DEPOSIT_AMOUNT = 1 * BASE_AMOUNT; // 1 token
 
     event ProtocolFeeChanged(uint256 protocolFee);
     event ProtocolFeeWithdrawn(uint256 amount, address token);
     event PlayerClaimedReward(uint256 chickenId, address player, uint256 reward);
     event PlayerChickendOut(uint256 chickenId, address player, uint256 amount);
-    event ChickenStarted(
-        uint256 chickenId, uint256 start, uint256 end, uint256 reward, address token, address createdBy
-    );
+    event ChickenStarted(uint256 chickenId, uint256 start, uint256 end, uint256 reward, address token, address createdBy);
     event PlayerJoined(uint256 chickenId, address player, uint256 totalDeposits);
 
     error ChickenMustEndInFuture();
@@ -73,7 +72,6 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
     }
 
     function initialize(address _owner) public initializer {
-        __ReentrancyGuard_init();
         __AccessControl_init();
         __ReentrancyGuard_init();
         _grantRole(DEFAULT_ADMIN_ROLE, _owner);
@@ -102,9 +100,7 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
         uint256 feeRequiredByProtocol = (_rewardAmount * protocolFee) / BPS;
         uint256 depositAmount = feeRequiredByProtocol + _rewardAmount;
         uint256 authorizedAmount = poolToken.allowance(msg.sender, address(this));
-        require(
-            depositAmount <= authorizedAmount, ChickenRewardAndProtocolFeeNotMet(_rewardAmount, feeRequiredByProtocol)
-        );
+        require(depositAmount <= authorizedAmount, ChickenRewardAndProtocolFeeNotMet(_rewardAmount, feeRequiredByProtocol));
         SafeERC20.safeTransferFrom(IERC20(_token), msg.sender, address(this), depositAmount);
 
         chickenCount++;
@@ -155,12 +151,13 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
             // last player remaining - get all the remaining reward including dust
             rewardAmount = chicken.rewardAmount - chicken.rewardDistributed;
         } else {
-            uint256 playerPortion = playerDeposit * BPS / chicken.totalDeposits;
-            rewardAmount = (chicken.rewardAmount * playerPortion) / BPS;
+            rewardAmount = (chicken.rewardAmount * playerDeposit) / chicken.totalDeposits;
         }
 
         chicken.rewardDistributed += rewardAmount;
         chicken.claimCount++;
+        playerBalance[_chickenId][msg.sender] = 0;
+        delete playerBalance[_chickenId][msg.sender];
 
         SafeERC20.safeTransfer(IERC20(chicken.token), msg.sender, playerDeposit + rewardAmount);
         emit PlayerClaimedReward(_chickenId, msg.sender, rewardAmount);
@@ -218,12 +215,7 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
      * @param _chickenId id of the chicken pool
      * @param _player address of the player
      */
-    function balance(uint256 _chickenId, address _player)
-        public
-        view
-        onlyValidChickenPool(_chickenId)
-        returns (uint256)
-    {
+    function balance(uint256 _chickenId, address _player) public view onlyValidChickenPool(_chickenId) returns (uint256) {
         return playerBalance[_chickenId][_player];
     }
 
