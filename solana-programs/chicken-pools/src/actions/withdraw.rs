@@ -89,6 +89,9 @@ pub fn withdraw(ctx: Context<Withdraw>) -> Result<()> {
     };
 
     let fee = bps(return_amount.0, pool.withdraw_fee_bps)?;
+    msg!("fee {}", fee);
+    msg!("final amount less fee {}", return_amount.0);
+    msg!("final amount {}", return_amount.0 - fee);
     let final_amount = return_amount.0 - fee;
     pool.withdrawn += final_amount;
     pool.users -= 1;

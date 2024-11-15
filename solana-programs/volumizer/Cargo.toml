@@ -1,0 +1,23 @@
+[package]
+name = "volumizer"
+version = "0.0.1"
+edition = "2021"
+license = "UNLICENSED"
+description = "Solana program for the volume launchpad"
+publish = false
+overflow-checks = true
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+
+[dependencies]
+bytemuck = "1.20.0"
+
+pinocchio = "0.6.0"
+
+[dev-dependencies]
