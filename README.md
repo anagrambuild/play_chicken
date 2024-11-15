@@ -1,4 +1,14 @@
-# Play Chicken!
+# Chicken Pools - Play Chicken
+
+An evm and solana system to play chicken pools.
+
+## Directory Structure
+
+contracts - contains the solidity smart contracts
+programs - contains the solana programs
+test - contains the tests for the both evm and solana programs
+lib - contains the libraries used by the solidity smart contracts and libraries for the solana programs
+script - cotains the foundry scripts used to deploy the contracts
 
 [![CI](https://github.com/anagrambuild/play_chicken/actions/workflows/forge-ci.yml/badge.svg)](https://github.com/anagrambuild/play_chicken/actions/workflows/forge-ci.yml)
 [![commitlint](https://github.com/anagrambuild/play_chicken/actions/workflows/commit-lint.yml/badge.svg)](https://github.com/anagrambuild/play_chicken/actions/workflows/commit-lint.yml)
@@ -141,10 +151,6 @@ $ forge script ./script/PlayChicken.s.sol:DeployPlayChickenScript --sig 'upgrade
 
 
 ## Foundry
-
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
-
-Foundry consists of:
 
 -   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
 -   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
