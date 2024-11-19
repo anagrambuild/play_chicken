@@ -3,10 +3,12 @@
 [![CI](https://github.com/anagrambuild/play_chicken/actions/workflows/forge-ci.yml/badge.svg)](https://github.com/anagrambuild/play_chicken/actions/workflows/forge-ci.yml)
 [![commitlint](https://github.com/anagrambuild/play_chicken/actions/workflows/commit-lint.yml/badge.svg)](https://github.com/anagrambuild/play_chicken/actions/workflows/commit-lint.yml)
 [![Yamlfmt](https://github.com/anagrambuild/play_chicken/actions/workflows/yamlfmt.yml/badge.svg)](https://github.com/anagrambuild/play_chicken/actions/workflows/yamlfmt.yml)
-[![Lint](https://github.com/anagrambuild/play_chicken/actions/workflows/ci-analyzers.yml/badge.svg)](https://github.com/anagrambuild/play_chicken/actions/workflows/ci-analyzers.yml)
+[![Lint](https://github.com/anagrambuild/play_chicken/actions/workflows/ci-lint.yml/badge.svg)](https://github.com/anagrambuild/play_chicken/actions/workflows/ci-lint.yml)
 [![Sepolia Testnet](https://github.com/anagrambuild/play_chicken/actions/workflows/sepolia-testnet.yml/badge.svg)](https://github.com/anagrambuild/play_chicken/actions/workflows/sepolia-testnet.yml)
 
-**Chicken Pools** aim to enhance holding times for meme coins by introducing time-based pools where participants strategically plan their exits within shorter time frames. This shift focuses on "when to sell" rather than simply "holding for long periods," allowing for higher engagement and reward opportunities over intervals ranging from 15 minutes to 5 days. 
+<img src="71be8af62.jpg" alt="Cartoon rooster rushing to the pool" width="25%">
+
+**Chicken Pools** aim to enhance holding times for meme coins by introducing time-based pools where participants strategically plan their exits within incentivized time frames. This shift focuses on "when to sell" rather than simply "holding for long periods," allowing for higher engagement and reward opportunities over intervals ranging from 15 minutes to 5 days. 
 
 ### Pool Mechanics & Design Considerations
 
@@ -131,7 +133,7 @@ $ forge script ./script/PlayChicken.s.sol:DeployPlayChickenScript --sig 'upgrade
 | ------- | ------------------------------------------ | --------------------------- | --------------------------- | ------------------------------------------------------------------------------- |
 | Sepolia | 0xd9bf5f4C94dED9558f8385C90b4f372f709c1F4B | ProxyAdmin                  | Transparent Proxy Delegate  | https://sepolia.etherscan.io/address/0xd9bf5f4c94ded9558f8385c90b4f372f709c1f4b |
 | Sepolia | 0x896d6e05a6b74E0D82660426e25b789003C404Fd | TransparentUpgradeableProxy | Chicken Pool Proxy          | https://sepolia.etherscan.io/address/0x896d6e05a6b74e0d82660426e25b789003c404fd |
-| Sepolia | 0xc8b04a7EafA5022d3B54C2f11174E46267fF49fF | PlayChicken                 | Chicken Pool Implementation | https://sepolia.etherscan.io/address/0xc8b04a7eafa5022d3b54c2f11174e46267ff49ff |
+| Sepolia | 0x5C8a691f42fa413466ca447bcCC6FC85f6cfb3ba | PlayChicken                 | Chicken Pool Implementation | https://sepolia.etherscan.io/address/0x5C8a691f42fa413466ca447bcCC6FC85f6cfb3ba |
 
 
 ## Foundry

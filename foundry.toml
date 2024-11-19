@@ -8,7 +8,7 @@ via-ir = true
 
 [fmt]
 # These are all the `forge fmt` defaults.
-line_length = 120
+line_length = 130
 tab_width = 4
 bracket_spacing = false
 int_types = 'long'
