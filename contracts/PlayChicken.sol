@@ -1,18 +1,21 @@
-// SPDX-License-Identifier: AGPL-3.0
+// SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.20;
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
-contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
+contract PlayChicken is Initializable, AccessControlUpgradeable, PausableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     bytes32 public constant PROTOCOL_ROLE = keccak256("PROTOCOL_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     uint256 public constant BPS = 10000;
     uint256 public constant BASE_AMOUNT = 10 ** 18;
@@ -71,10 +74,16 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
         _disableInitializers();
     }
 
+    /**
+     * Initialize the contract
+     * @param _owner address of the owner
+     */
     function initialize(address _owner) public initializer {
         __AccessControl_init();
+        __Pausable_init();
         __ReentrancyGuard_init();
         _grantRole(DEFAULT_ADMIN_ROLE, _owner);
+        _grantRole(PAUSER_ROLE, _owner);
         chickenCount = 0;
         protocolFee = 100; // 1%
     }
@@ -88,6 +97,7 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
      */
     function start(address _token, uint256 _start, uint256 _end, uint256 _rewardAmount, uint256 _minimumDeposit)
         external
+        whenNotPaused
         nonReentrant
     {
         require(_start > block.number, ChickenMustStartInFuture());
@@ -121,7 +131,12 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
      * @param _chickenId id of the chicken pool
      * @param _depositAmount amount to be deposited
      */
-    function join(uint256 _chickenId, uint256 _depositAmount) external nonReentrant onlyValidChickenPool(_chickenId) {
+    function join(uint256 _chickenId, uint256 _depositAmount)
+        external
+        whenNotPaused
+        nonReentrant
+        onlyValidChickenPool(_chickenId)
+    {
         Chicken storage chicken = chickens[_chickenId];
         require(block.number < chicken.start, ChickenRunning());
         require(_depositAmount >= chicken.minimumDeposit, ChickenMinimumDepositNotMet(chicken.minimumDeposit));
@@ -140,7 +155,7 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
      * @dev reward is sent to msg.sender, msg.sender must be part of the chicken pool
      * @param _chickenId id of the chicken pool
      */
-    function claim(uint256 _chickenId) external nonReentrant onlyValidChickenPool(_chickenId) {
+    function claim(uint256 _chickenId) external whenNotPaused nonReentrant onlyValidChickenPool(_chickenId) {
         Chicken storage chicken = chickens[_chickenId];
         require(chicken.end < block.number || getPlayerCount(_chickenId) == 1, ChickenNotFinished());
         require(isPlayer(_chickenId, msg.sender), PlayerIsNotInChickenPool(msg.sender));
@@ -170,7 +185,7 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
      * claim reward instead of withdrawing
      * @param _chickenId id of the chicken pool
      */
-    function withdraw(uint256 _chickenId) external nonReentrant onlyValidChickenPool(_chickenId) {
+    function withdraw(uint256 _chickenId) external whenNotPaused nonReentrant onlyValidChickenPool(_chickenId) {
         Chicken storage chicken = chickens[_chickenId];
         require(block.number < chicken.end && getPlayerCount(_chickenId) > 1, ChickenFinished());
         require(isPlayer(_chickenId, msg.sender), PlayerIsNotInChickenPool(msg.sender));
@@ -193,6 +208,7 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
     function withdrawProtocolFee(uint256 _chickenId)
         external
         onlyRole(PROTOCOL_ROLE)
+        whenNotPaused
         nonReentrant
         onlyValidChickenPool(_chickenId)
     {
@@ -260,6 +276,20 @@ contract PlayChicken is ReentrancyGuardUpgradeable, AccessControlUpgradeable {
      */
     function getPlayerCount(uint256 _chickenId) public view returns (uint256) {
         return players[_chickenId].length();
+    }
+
+    /**
+     * Pause the contract
+     */
+    function pause() public onlyRole(PAUSER_ROLE) {
+        _pause();
+    }
+
+    /**
+     * Unpause the contract
+     */
+    function unpause() public onlyRole(PAUSER_ROLE) {
+        _unpause();
     }
 
     function removePlayer(uint256 _chickenId, address _player) internal {

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.20;
 
 // solhint-disable var-name-mixedcase
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 import {Test} from "forge-std/Test.sol";
 
@@ -13,10 +14,13 @@ import {PlayChicken} from "../contracts/PlayChicken.sol";
 import {ERC20Mock} from "./ERC20Mock.sol";
 
 contract PlayChickenTest is Test {
+    uint256 public constant MAX_SUPPLY = 1000000 * 10 ** 18;
+
     // these are used as constants but initialized in setUp
     address public CHICKEN_POOL;
     address public MEME_TOKEN;
     address public OWNER;
+    address public PAUSER;
     address public PROTOCOL;
     address public PLAYER1;
     address public PLAYER2;
@@ -30,28 +34,38 @@ contract PlayChickenTest is Test {
     error InvalidInitialization();
 
     function setUp() public {
-        // chicken pool
+        // chicken pool mocking
         CHICKEN_POOL = vm.addr(0x1);
-        mockChickenPool(CHICKEN_POOL);
-        chickenPool = PlayChicken(CHICKEN_POOL);
-
         // meme token
         MEME_TOKEN = vm.addr(0x2);
-        mockMemeToken(MEME_TOKEN);
-        memeToken = IERC20(MEME_TOKEN);
-
         // setup users
         OWNER = vm.addr(0x3);
         PROTOCOL = vm.addr(0x4);
         PLAYER1 = vm.addr(0x5);
         PLAYER2 = vm.addr(0x6);
         PLAYER3 = vm.addr(0x7);
+        PAUSER = vm.addr(0x8);
 
+        mockChickenPool(CHICKEN_POOL);
+        chickenPool = PlayChicken(CHICKEN_POOL);
+
+        mockMemeToken(MEME_TOKEN);
+        memeToken = IERC20(MEME_TOKEN);
+
+        // helpful constants
         REWARD_AMOUNT = chickenPool.MINIMUM_REWARD_AMOUNT();
         DEPOSIT_AMOUNT = chickenPool.MINIMUM_DEPOSIT_AMOUNT();
 
+        assertTrue(1000 * REWARD_AMOUNT < MAX_SUPPLY);
+        assertTrue(100 * DEPOSIT_AMOUNT < MAX_SUPPLY);
+
         // setup roles
+        vm.startPrank(OWNER);
         chickenPool.grantRole(chickenPool.PROTOCOL_ROLE(), PROTOCOL);
+        chickenPool.revokeRole(chickenPool.PAUSER_ROLE(), OWNER);
+        chickenPool.grantRole(chickenPool.PAUSER_ROLE(), PAUSER);
+
+        vm.stopPrank();
 
         // mint tokens
         ERC20Mock _token = ERC20Mock(MEME_TOKEN);
@@ -59,6 +73,17 @@ contract PlayChickenTest is Test {
         _token.mint(PLAYER1, 10 * DEPOSIT_AMOUNT);
         _token.mint(PLAYER2, 10 * DEPOSIT_AMOUNT);
         _token.mint(PLAYER3, 10 * DEPOSIT_AMOUNT);
+    }
+
+    function testInitialize() public view {
+        assertEq(chickenPool.hasRole(chickenPool.PROTOCOL_ROLE(), PROTOCOL), true);
+        assertEq(chickenPool.hasRole(chickenPool.DEFAULT_ADMIN_ROLE(), OWNER), true);
+        assertEq(chickenPool.hasRole(chickenPool.PAUSER_ROLE(), PAUSER), true);
+
+        assertEq(chickenPool.hasRole(chickenPool.PAUSER_ROLE(), OWNER), false);
+        assertEq(chickenPool.hasRole(chickenPool.PROTOCOL_ROLE(), address(this)), false);
+        assertEq(chickenPool.hasRole(chickenPool.DEFAULT_ADMIN_ROLE(), address(this)), false);
+        assertEq(chickenPool.hasRole(chickenPool.PAUSER_ROLE(), address(this)), false);
     }
 
     function testTokenBalanceAndRoleSetup() public view {
@@ -663,15 +688,138 @@ contract PlayChickenTest is Test {
         chickenPool.setProtocolFee(2000);
     }
 
+    function testPauseContract() public {
+        assertEq(chickenPool.paused(), false);
+        vm.prank(PAUSER);
+        chickenPool.pause();
+        assertEq(chickenPool.paused(), true);
+    }
+
+    function testUnpauseContract() public {
+        vm.prank(PAUSER);
+        chickenPool.pause();
+        assertEq(chickenPool.paused(), true);
+        vm.prank(PAUSER);
+        chickenPool.unpause();
+        assertEq(chickenPool.paused(), false);
+    }
+
+    function testStartRevertWhenPaused() public {
+        vm.prank(PAUSER);
+        chickenPool.pause();
+        assertEq(chickenPool.paused(), true);
+        uint256 requiredSpend = REWARD_AMOUNT + REWARD_AMOUNT * chickenPool.protocolFee() / chickenPool.BPS();
+        vm.prank(PROTOCOL);
+        memeToken.approve(CHICKEN_POOL, requiredSpend);
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+        vm.prank(PROTOCOL);
+        chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, REWARD_AMOUNT, DEPOSIT_AMOUNT);
+        assertEq(chickenPool.chickenCount(), 0);
+    }
+
+    function testJoinRevertWhenPaused() public {
+        uint256 requiredSpend = REWARD_AMOUNT + REWARD_AMOUNT * chickenPool.protocolFee() / chickenPool.BPS();
+        vm.prank(PROTOCOL);
+        memeToken.approve(CHICKEN_POOL, requiredSpend);
+        vm.prank(PROTOCOL);
+        chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, REWARD_AMOUNT, DEPOSIT_AMOUNT);
+        assertEq(chickenPool.chickenCount(), 1);
+        vm.prank(PAUSER);
+        chickenPool.pause();
+        assertEq(chickenPool.paused(), true);
+        vm.startPrank(PLAYER1);
+        memeToken.approve(CHICKEN_POOL, DEPOSIT_AMOUNT);
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+        chickenPool.join(1, DEPOSIT_AMOUNT);
+        vm.stopPrank();
+    }
+
+    function testClaimRevertWhenPaused() public {
+        uint256 requiredSpend = REWARD_AMOUNT + REWARD_AMOUNT * chickenPool.protocolFee() / chickenPool.BPS();
+        vm.prank(PROTOCOL);
+        memeToken.approve(CHICKEN_POOL, requiredSpend);
+        vm.prank(PROTOCOL);
+        chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, REWARD_AMOUNT, DEPOSIT_AMOUNT);
+        assertEq(chickenPool.chickenCount(), 1);
+        vm.startPrank(PLAYER1);
+        memeToken.approve(CHICKEN_POOL, DEPOSIT_AMOUNT);
+        chickenPool.join(1, DEPOSIT_AMOUNT);
+        vm.stopPrank();
+        vm.roll(block.number + 3);
+        vm.prank(PAUSER);
+        chickenPool.pause();
+        assertEq(chickenPool.paused(), true);
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+        vm.prank(PLAYER1);
+        chickenPool.claim(1);
+        vm.stopPrank();
+    }
+
+    function testWithdrawRevertWhenPaused() public {
+        uint256 requiredSpend = REWARD_AMOUNT + REWARD_AMOUNT * chickenPool.protocolFee() / chickenPool.BPS();
+        vm.prank(PROTOCOL);
+        memeToken.approve(CHICKEN_POOL, requiredSpend);
+        vm.prank(PROTOCOL);
+        chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, REWARD_AMOUNT, DEPOSIT_AMOUNT);
+        assertEq(chickenPool.chickenCount(), 1);
+        vm.startPrank(PLAYER1);
+        memeToken.approve(CHICKEN_POOL, DEPOSIT_AMOUNT);
+        chickenPool.join(1, DEPOSIT_AMOUNT);
+        vm.stopPrank();
+        vm.roll(block.number + 3);
+        vm.prank(PAUSER);
+        chickenPool.pause();
+        assertEq(chickenPool.paused(), true);
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+        vm.prank(PLAYER1);
+        chickenPool.withdraw(1);
+        vm.stopPrank();
+    }
+
+    function testWithdrawProtocolFeeRevertWhenPaused() public {
+        vm.prank(PAUSER);
+        chickenPool.pause();
+        assertEq(chickenPool.paused(), true);
+        vm.prank(PROTOCOL);
+        vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+        chickenPool.withdrawProtocolFee(1);
+    }
+
+    function testPauseRequiresPauserRole() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), chickenPool.PAUSER_ROLE()
+            )
+        );
+        chickenPool.pause();
+    }
+
+    function testPauseNotPossibleByOwner() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, OWNER, chickenPool.PAUSER_ROLE())
+        );
+        vm.prank(OWNER);
+        chickenPool.pause();
+    }
+
+    function testUnpauseRequiresPauserRole() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), chickenPool.PAUSER_ROLE()
+            )
+        );
+        chickenPool.unpause();
+    }
+
     function mockChickenPool(address _chickenPool) internal {
         PlayChicken implementation = new PlayChicken();
         bytes memory code = address(implementation).code;
         vm.etch(_chickenPool, code);
-        PlayChicken(_chickenPool).initialize(address(this));
+        PlayChicken(_chickenPool).initialize(OWNER);
     }
 
     function mockMemeToken(address _memeToken) internal {
-        ERC20Mock tokenImpl = new ERC20Mock("MemeToken", "MEME");
+        ERC20Mock tokenImpl = new ERC20Mock("MemeToken", "MEME", MAX_SUPPLY);
         bytes memory code = address(tokenImpl).code;
         vm.etch(_memeToken, code);
     }
