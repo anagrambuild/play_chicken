@@ -134,6 +134,10 @@ $ forge script ./script/PlayChicken.s.sol:DeployPlayChickenScript --sig 'upgrade
 | Sepolia | 0xd9bf5f4C94dED9558f8385C90b4f372f709c1F4B | ProxyAdmin                  | Chicken Pool Proxy Delegate | https://sepolia.etherscan.io/address/0xd9bf5f4c94ded9558f8385c90b4f372f709c1f4b |
 | Sepolia | 0x896d6e05a6b74E0D82660426e25b789003C404Fd | TransparentUpgradeableProxy | Chicken Pool Proxy          | https://sepolia.etherscan.io/address/0x896d6e05a6b74e0d82660426e25b789003c404fd |
 | Sepolia | 0x5C8a691f42fa413466ca447bcCC6FC85f6cfb3ba | PlayChicken                 | Chicken Pool Implementation | https://sepolia.etherscan.io/address/0x5C8a691f42fa413466ca447bcCC6FC85f6cfb3ba |
+| Sepolia | 0xe27FA48f938913c70a6b02587D003078e786c74c | ProxyAdmin                  | Launcher Proxy Delegate     | https://sepolia.etherscan.io/address/0xe27fa48f938913c70a6b02587d003078e786c74c |
+| Sepolia | 0x4db097b90530f111e88325e514c9a0d59392db9e | TransparentUpgradeableProxy | Launcher Pool Proxy         | https://sepolia.etherscan.io/address/0x4db097b90530f111e88325e514c9a0d59392db9e |
+| Sepolia | 0xAb24873BF6b7f14d3f8Ae0716193Da701Ab61a9F | ChickenLauncher             | Launcher implementation     | https://sepolia.etherscan.io/address/0xab24873bf6b7f14d3f8ae0716193da701ab61a9f |
+| Sepolia | 0x40c5215E1A69B7934948E9c28FCE20046208702E | ChickenTokenUpgradeable     | Chicken Token               | https://sepolia.etherscan.io/address/0x40c5215e1a69b7934948e9c28fce20046208702e |
 
 
 ## Foundry
