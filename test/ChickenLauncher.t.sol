@@ -27,7 +27,9 @@ contract ChickenLauncherTest is Test {
     function testInitialize() public view {
         assertTrue(launcher.hasRole(launcher.DEFAULT_ADMIN_ROLE(), CHICKEN_ADMIN));
         assertTrue(launcher.hasRole(launcher.PAUSER_ROLE(), CHICKEN_ADMIN));
+        // caller is not pauser
         assertFalse(launcher.hasRole(launcher.PAUSER_ROLE(), address(this)));
+        // caller is not admin
         assertFalse(launcher.hasRole(launcher.DEFAULT_ADMIN_ROLE(), address(this)));
     }
 

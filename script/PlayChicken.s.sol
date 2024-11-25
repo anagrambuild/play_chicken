@@ -32,12 +32,13 @@ contract PlayChickenDeployScript is Script {
         PlayChicken playChicken = PlayChicken(proxyAddress);
         if (admin != deploymentAdmin) {
             playChicken.grantRole(playChicken.DEFAULT_ADMIN_ROLE(), admin);
-            playChicken.renounceRole(playChicken.DEFAULT_ADMIN_ROLE(), deploymentAdmin);
+            playChicken.revokeRole(playChicken.DEFAULT_ADMIN_ROLE(), deploymentAdmin);
             console.log("Pool admin role is ", admin);
             console.log("Deployment role has been renounced ", deploymentAdmin);
         } else {
             console.log("Pool admin role is ", admin);
         }
+        playChicken.grantRole(playChicken.PAUSER_ROLE(), admin);
         playChicken.grantRole(playChicken.PROTOCOL_ROLE(), protocolAdmin);
         console.log("Protocol admin role is ", protocolAdmin);
         vm.stopBroadcast();

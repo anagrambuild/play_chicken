@@ -80,9 +80,13 @@ contract PlayChickenTest is Test {
         assertEq(chickenPool.hasRole(chickenPool.DEFAULT_ADMIN_ROLE(), OWNER), true);
         assertEq(chickenPool.hasRole(chickenPool.PAUSER_ROLE(), PAUSER), true);
 
+        // owner can not pause
         assertEq(chickenPool.hasRole(chickenPool.PAUSER_ROLE(), OWNER), false);
+        // protocol is not the caller
         assertEq(chickenPool.hasRole(chickenPool.PROTOCOL_ROLE(), address(this)), false);
+        // admin is not the caller
         assertEq(chickenPool.hasRole(chickenPool.DEFAULT_ADMIN_ROLE(), address(this)), false);
+        // pauser is not the caller
         assertEq(chickenPool.hasRole(chickenPool.PAUSER_ROLE(), address(this)), false);
     }
 

@@ -19,26 +19,25 @@ contract ChickenLauncherDeployScript is Script {
 
     function deployTransparentProxy() public {
         address admin = vm.envAddress("CHICKEN_POOL_ADMIN");
-        address protocolAdmin = vm.envAddress("PROTOCOL_ADMIN");
         address deploymentAdmin = msg.sender;
         bytes memory initializationData = abi.encodeWithSelector(ChickenLauncher.initialize.selector, deploymentAdmin);
         vm.startBroadcast();
         address implementation = address(new ChickenLauncher());
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(implementation, admin, initializationData);
         address proxyAddress = address(proxy);
-
         console.log("TransparentUpgradeableProxy deployed at: ", proxyAddress);
         emit ChickenLauncherDeployed(proxyAddress, implementation);
         ChickenLauncher chickenLauncher = ChickenLauncher(proxyAddress);
         if (admin != deploymentAdmin) {
             chickenLauncher.grantRole(chickenLauncher.DEFAULT_ADMIN_ROLE(), admin);
-            chickenLauncher.renounceRole(chickenLauncher.DEFAULT_ADMIN_ROLE(), deploymentAdmin);
+            chickenLauncher.revokeRole(chickenLauncher.DEFAULT_ADMIN_ROLE(), deploymentAdmin);
             console.log("Pool admin role is ", admin);
             console.log("Deployment role has been renounced ", deploymentAdmin);
         } else {
             console.log("Pool admin role is ", admin);
         }
-        console.log("Protocol admin role is ", protocolAdmin);
+        chickenLauncher.grantRole(chickenLauncher.PAUSER_ROLE(), admin);
+        console.log("Pauser role is ", admin);
         vm.stopBroadcast();
     }
 
