@@ -1,10 +1,9 @@
 use anchor_lang::{prelude::AccountMeta, AnchorSerialize, Discriminator};
-use anchor_spl::associated_token::{self, get_associated_token_address_with_program_id};
+use anchor_spl::associated_token::get_associated_token_address_with_program_id;
 use anyhow::Result;
 use chicken::{
     actions::InitializePoolArgs,
     instruction::{Deposit, InitializePool, Withdraw},
-    state::PoolMode,
     ID,
 };
 use litesvm::LiteSVM;
@@ -16,8 +15,10 @@ use solana_sdk::{
 };
 
 pub fn load_program(svm: &mut LiteSVM) -> anyhow::Result<()> {
-    svm.add_program_from_file(ID, "../target/deploy/chicken.so")
-        .map_err(|_| anyhow::anyhow!("Failed to load program"))
+    let cwd = std::env::current_dir().unwrap();
+    let error = format!("Failed to set current directory to {:?}", cwd);
+    svm.add_program_from_file(ID, "../target/debug/libchicken.so")
+        .map_err(|_| anyhow::anyhow!(error))
 }
 
 pub fn setup_mint(

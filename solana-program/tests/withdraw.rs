@@ -60,7 +60,7 @@ fn test_withdraw_single_user_last_out_winner() -> Result<()> {
     // User should get back their deposit + collateral (since they're last out)
     assert_eq!(user_ata.amount, amount_rerutned);
     // Pool should only have fees
-    assert_eq!(pool_ata.amount,fees);
+    assert_eq!(pool_ata.amount, fees);
     assert_eq!(pool.fee_amount, fees);
 
     Ok(())
@@ -109,12 +109,7 @@ fn test_withdraw_multi_user_first_out_loser() -> Result<()> {
 
     // First user withdraws (should lose collateral)
     ctx.svm.warp_to_slot(current_clock + 500);
-    withdraw(
-        &mut ctx.svm,
-        &ctx.pool_key,
-        &ctx.mint,
-        &user1
-    )?;
+    withdraw(&mut ctx.svm, &ctx.pool_key, &ctx.mint, &user1)?;
 
     let user1_ata_account = ctx.svm.get_account(&user1_ata).unwrap();
     let user1_ata = spl_token::state::Account::unpack(&user1_ata_account.data).unwrap();
@@ -126,12 +121,7 @@ fn test_withdraw_multi_user_first_out_loser() -> Result<()> {
 
     // Second user withdraws (should get their collateral back plus first user's collateral)
     ctx.svm.warp_to_slot(current_clock + 600);
-    withdraw(
-        &mut ctx.svm,
-        &ctx.pool_key,
-        &ctx.mint,
-        &user2
-    )?;
+    withdraw(&mut ctx.svm, &ctx.pool_key, &ctx.mint, &user2)?;
 
     let user2_ata_account = ctx.svm.get_account(&user2_ata).unwrap();
     let user2_ata = spl_token::state::Account::unpack(&user2_ata_account.data).unwrap();
@@ -194,30 +184,15 @@ fn test_withdraw_multi_user_last_out_winner() -> Result<()> {
 
     // First user withdraws (loses collateral)
     ctx.svm.warp_to_slot(current_clock + 500);
-    withdraw(
-        &mut ctx.svm,
-        &ctx.pool_key,
-        &ctx.mint,
-        &user1
-    )?;
+    withdraw(&mut ctx.svm, &ctx.pool_key, &ctx.mint, &user1)?;
 
     // Second user withdraws (loses collateral)
     ctx.svm.warp_to_slot(current_clock + 600);
-    withdraw(
-        &mut ctx.svm,
-        &ctx.pool_key,
-        &ctx.mint,
-        &user2
-    )?;
+    withdraw(&mut ctx.svm, &ctx.pool_key, &ctx.mint, &user2)?;
 
     // Last user withdraws (gets all collateral)
     ctx.svm.warp_to_slot(current_clock + 700);
-    withdraw(
-        &mut ctx.svm,
-        &ctx.pool_key,
-        &ctx.mint,
-        &user3
-    )?;
+    withdraw(&mut ctx.svm, &ctx.pool_key, &ctx.mint, &user3)?;
 
     // Check final balances
     let user1_ata_account = ctx.svm.get_account(&user1_ata).unwrap();
@@ -271,12 +246,7 @@ fn test_withdraw_time_based_early_withdrawal() -> Result<()> {
     // Early withdrawal (25% through the pool duration)
     let withdrawal_time = current_clock + 250; // 25% of duration
     ctx.svm.warp_to_slot(withdrawal_time);
-    withdraw(
-        &mut ctx.svm,
-        &ctx.pool_key,
-        &ctx.mint,
-        &user
-    )?;
+    withdraw(&mut ctx.svm, &ctx.pool_key, &ctx.mint, &user)?;
 
     // Check final balances
     let user_ata_account = ctx.svm.get_account(&user_ata).unwrap();
@@ -326,12 +296,7 @@ fn test_withdraw_time_based_full_duration() -> Result<()> {
 
     // Full duration withdrawal
     ctx.svm.warp_to_slot(current_clock + 1001);
-    withdraw(
-        &mut ctx.svm,
-        &ctx.pool_key,
-        &ctx.mint,
-        &user
-    )?;
+    withdraw(&mut ctx.svm, &ctx.pool_key, &ctx.mint, &user)?;
 
     // Check final balances
     let user_ata_account = ctx.svm.get_account(&user_ata).unwrap();
@@ -394,30 +359,15 @@ fn test_withdraw_time_based_multiple_users() -> Result<()> {
 
     // User 1 withdraws at 25% duration
     ctx.svm.warp_to_slot(current_clock + 250);
-    withdraw(
-        &mut ctx.svm,
-        &ctx.pool_key,
-        &ctx.mint,
-        &user1
-    )?;
+    withdraw(&mut ctx.svm, &ctx.pool_key, &ctx.mint, &user1)?;
 
     // User 2 withdraws at 75% duration
     ctx.svm.warp_to_slot(current_clock + 750);
-    withdraw(
-        &mut ctx.svm,
-        &ctx.pool_key,
-        &ctx.mint,
-        &user2
-    )?;
+    withdraw(&mut ctx.svm, &ctx.pool_key, &ctx.mint, &user2)?;
 
     // User 3 withdraws after full duration
     ctx.svm.warp_to_slot(current_clock + 1001);
-    withdraw(
-        &mut ctx.svm,
-        &ctx.pool_key,
-        &ctx.mint,
-        &user3
-    )?;
+    withdraw(&mut ctx.svm, &ctx.pool_key, &ctx.mint, &user3)?;
 
     // Check final balances
     let user1_ata_account = ctx.svm.get_account(&user1_ata).unwrap();
@@ -481,12 +431,7 @@ fn test_withdraw_time_based_exact_halfway() -> Result<()> {
 
     // Withdraw exactly halfway through
     ctx.svm.warp_to_slot(current_clock + 505); // 50% of duration
-    withdraw(
-        &mut ctx.svm,
-        &ctx.pool_key,
-        &ctx.mint,
-        &user
-    )?;
+    withdraw(&mut ctx.svm, &ctx.pool_key, &ctx.mint, &user)?;
 
     // Check final balance
     let user_ata_account = ctx.svm.get_account(&user_ata).unwrap();

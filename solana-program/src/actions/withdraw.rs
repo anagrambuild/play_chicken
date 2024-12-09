@@ -1,8 +1,5 @@
-use super::{assert_pool_active, assert_pool_withdrawable, bps, update_pool_state};
-use crate::{
-    error::ChickenError,
-    state::{Pool, PoolMode, PoolState, UserPosition},
-};
+use super::{assert_pool_withdrawable, bps, update_pool_state};
+use crate::state::{Pool, PoolMode, UserPosition};
 use anchor_lang::prelude::*;
 use anchor_spl::{
     token_2022::TransferChecked,
@@ -101,7 +98,7 @@ pub fn withdraw(ctx: Context<Withdraw>) -> Result<()> {
     anchor_spl::token_interface::transfer_checked(
         CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
-            TransferChecked {      
+            TransferChecked {
                 from: ctx.accounts.pool_collateral_token_account.to_account_info(),
                 to: ctx.accounts.user_collateral_token_account.to_account_info(),
                 authority: pool_info,

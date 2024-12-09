@@ -1,4 +1,3 @@
-
 use anchor_lang::prelude::*;
 
 #[derive(Debug, AnchorSerialize, AnchorDeserialize, Clone, Copy, Default, Eq, PartialEq)]
@@ -51,4 +50,3 @@ pub struct UserPosition {
     pub deposit_time: u64,
     pub withdrawn: bool,
 }
-

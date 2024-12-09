@@ -1,5 +1,5 @@
-use anchor_lang::prelude::*;
 use crate::state::*;
+use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct RemovePool<'info> {
@@ -29,7 +29,7 @@ pub struct RemovePool<'info> {
 
 pub fn remove_pool(ctx: Context<RemovePool>) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
-    
+
     let current_minimum_balance = Rent::get()?.minimum_balance(1);
     let previous_minimum_balance = Rent::get()?.minimum_balance(std::mem::size_of::<Pool>());
     let rent_to_return = previous_minimum_balance.saturating_sub(current_minimum_balance);
@@ -37,7 +37,13 @@ pub fn remove_pool(ctx: Context<RemovePool>) -> Result<()> {
     // Transfer rent back to authority
     if rent_to_return > 0 {
         **pool.to_account_info().try_borrow_mut_lamports()? = current_minimum_balance;
-        **ctx.accounts.payer.to_account_info().try_borrow_mut_lamports()? = ctx.accounts.payer
+        **ctx
+            .accounts
+            .payer
+            .to_account_info()
+            .try_borrow_mut_lamports()? = ctx
+            .accounts
+            .payer
             .to_account_info()
             .lamports()
             .checked_add(rent_to_return)

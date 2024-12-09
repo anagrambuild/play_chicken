@@ -30,13 +30,7 @@ fn test_deposit_many() -> Result<()> {
         let random = rand::random::<u32>() as u64;
         let (user, user_ata) = setup_user(&mut ctx, random)?;
 
-        let user_position_key = deposit(
-            &mut ctx.svm,
-            &ctx.mint,
-            &ctx.pool_key,
-            &user,
-            random,
-        )?;
+        let user_position_key = deposit(&mut ctx.svm, &ctx.mint, &ctx.pool_key, &user, random)?;
 
         let pool = ctx.svm.get_account(&ctx.pool_key).unwrap();
         let pool = Pool::deserialize(&mut &pool.data[8..]).unwrap();

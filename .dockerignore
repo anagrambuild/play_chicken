@@ -1,0 +1,22 @@
+README.md
+
+# Compiler files
+cache/
+out/
+
+# Ignores development broadcast logs
+broadcast/
+/broadcast/*/31337/
+/broadcast/**/dry-run/
+
+# Docs
+docs/
+
+# Dotenv file
+.env
+
+# node
+node_modules/
+
+.DS_Store
+target

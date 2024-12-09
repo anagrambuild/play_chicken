@@ -1,8 +1,14 @@
+use crate::{
+    error::ChickenError,
+    state::{Pool, UserPosition},
+};
 use anchor_lang::prelude::*;
-use anchor_spl::{token_2022::TransferChecked, token_interface::{Mint, TokenAccount, TokenInterface}};
-use crate::{error::ChickenError, state::{Pool, UserPosition}};
+use anchor_spl::{
+    token_2022::TransferChecked,
+    token_interface::{Mint, TokenAccount, TokenInterface},
+};
 
-use super::{bps, update_pool_state,assert_pool_active};
+use super::{assert_pool_active, bps, update_pool_state};
 
 #[derive(Accounts)]
 #[instruction(amount: u64)]
@@ -55,24 +61,24 @@ pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         }
     }
     if let Some(deposit_limit) = pool.max_deposit {
-      if user_position.deposit_amount + amount > deposit_limit {
-          return Err(ChickenError::UserDepositLimitExceeded.into());
-      }
+        if user_position.deposit_amount + amount > deposit_limit {
+            return Err(ChickenError::UserDepositLimitExceeded.into());
+        }
     }
     anchor_spl::token_interface::transfer_checked(
-      CpiContext::new(
-          ctx.accounts.token_program.to_account_info(),
-          TransferChecked {
-              from: ctx.accounts.user_collateral_token_account.to_account_info(),
-              to: ctx.accounts.pool_collateral_token_account.to_account_info(),
-              authority: ctx.accounts.user.to_account_info(),
-              mint: ctx.accounts.collateral_mint.to_account_info(),
-          }
-      ),
-      amount,
-      ctx.accounts.collateral_mint.decimals,
+        CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            TransferChecked {
+                from: ctx.accounts.user_collateral_token_account.to_account_info(),
+                to: ctx.accounts.pool_collateral_token_account.to_account_info(),
+                authority: ctx.accounts.user.to_account_info(),
+                mint: ctx.accounts.collateral_mint.to_account_info(),
+            },
+        ),
+        amount,
+        ctx.accounts.collateral_mint.decimals,
     )?;
-    
+
     pool.users += 1;
     let fee = bps(amount, pool.deposit_fee_bps)?;
     let collateral = bps(amount - fee, pool.collateral_bps)?;

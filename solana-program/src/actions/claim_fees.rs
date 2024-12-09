@@ -4,11 +4,11 @@ use crate::{
     state::{Pool, PoolState},
 };
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::program_memory::sol_memcpy;
 use anchor_spl::{
     token_2022::TransferChecked,
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
-use anchor_lang::solana_program::program_memory::sol_memcpy;
 
 #[derive(Accounts)]
 pub struct ClaimFees<'info> {
@@ -76,7 +76,7 @@ pub struct InitializeAdmin<'info> {
       bump
     )]
     /// CHECK: Admin account
-    pub admin_record: UncheckedAccount<'info>,  
+    pub admin_record: UncheckedAccount<'info>,
     #[account(mut)]
     pub admin: Signer<'info>,
     pub system_program: Program<'info, System>,
@@ -102,7 +102,7 @@ pub struct ChangeAdmin<'info> {
       bump
     )]
     /// CHECK: Admin account
-    pub admin_record: UncheckedAccount<'info>,  
+    pub admin_record: UncheckedAccount<'info>,
     #[account(mut)]
     pub admin: Signer<'info>,
     pub new_admin: Signer<'info>,

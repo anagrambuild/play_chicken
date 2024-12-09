@@ -1,7 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
-use crate::{state::{Pool, PoolMode, PoolState}, DEPOSIT_FEE_BPS, WITHDRAW_FEE_BPS};
+use crate::{
+    state::{Pool, PoolMode, PoolState},
+    DEPOSIT_FEE_BPS, WITHDRAW_FEE_BPS,
+};
 
 #[derive(Accounts)]
 #[instruction(args: InitializePoolArgs)]
@@ -21,8 +24,7 @@ pub struct InitializePool<'info> {
     #[account(mut)]
     pub creator: Signer<'info>,
     pub pool_collateral_mint: InterfaceAccount<'info, Mint>,
-    #[account(mut, 
-      associated_token::mint = pool_collateral_mint,
+    #[account(mut, associated_token::mint = pool_collateral_mint,
       associated_token::authority = pool,
       associated_token::token_program = token_program
     )]
