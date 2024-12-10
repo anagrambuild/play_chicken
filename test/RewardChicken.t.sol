@@ -9,11 +9,11 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 import {Test} from "forge-std/Test.sol";
 
-import {PlayChicken} from "../contracts/PlayChicken.sol";
+import {RewardChicken} from "../contracts/RewardChicken.sol";
 
 import {ERC20Mock} from "./ERC20Mock.sol";
 
-contract PlayChickenTest is Test {
+contract RewardChickenTest is Test {
     uint256 public constant MAX_SUPPLY = 1000000 * 10 ** 18;
 
     // these are used as constants but initialized in setUp
@@ -28,7 +28,7 @@ contract PlayChickenTest is Test {
     uint256 public REWARD_AMOUNT;
     uint256 public DEPOSIT_AMOUNT;
 
-    PlayChicken public chickenPool;
+    RewardChicken public chickenPool;
     IERC20 public memeToken;
 
     error InvalidInitialization();
@@ -47,7 +47,7 @@ contract PlayChickenTest is Test {
         PAUSER = vm.addr(0x8);
 
         mockChickenPool(CHICKEN_POOL);
-        chickenPool = PlayChicken(CHICKEN_POOL);
+        chickenPool = RewardChicken(CHICKEN_POOL);
 
         mockMemeToken(MEME_TOKEN);
         memeToken = IERC20(MEME_TOKEN);
@@ -109,17 +109,17 @@ contract PlayChickenTest is Test {
     }
 
     function testStartRequiresBlockInFuture() public {
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenMustStartInFuture.selector));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenMustStartInFuture.selector));
         chickenPool.start(MEME_TOKEN, block.number, block.number + 1, REWARD_AMOUNT, DEPOSIT_AMOUNT);
     }
 
     function testStartRequiresEndInFuture() public {
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenStartAndEndMustBeDifferent.selector));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenStartAndEndMustBeDifferent.selector));
         chickenPool.start(CHICKEN_POOL, block.number + 2, block.number + 1, REWARD_AMOUNT, DEPOSIT_AMOUNT);
     }
 
     function testStartMustBeLessThanEnd() public {
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenStartAndEndMustBeDifferent.selector));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenStartAndEndMustBeDifferent.selector));
         chickenPool.start(CHICKEN_POOL, block.number + 1, block.number + 1, REWARD_AMOUNT, DEPOSIT_AMOUNT);
     }
 
@@ -130,7 +130,7 @@ contract PlayChickenTest is Test {
     function testStartRequiresMinimumReward() public {
         vm.expectRevert(
             abi.encodeWithSelector(
-                PlayChicken.ChickenRewardMustBeGreaterThanMinimum.selector, chickenPool.MINIMUM_REWARD_AMOUNT()
+                RewardChicken.ChickenRewardMustBeGreaterThanMinimum.selector, chickenPool.MINIMUM_REWARD_AMOUNT()
             )
         );
         chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, 0, 0);
@@ -142,7 +142,7 @@ contract PlayChickenTest is Test {
 
     function testStartRequiresMinimumDeposit() public {
         vm.expectRevert(
-            abi.encodeWithSelector(PlayChicken.ChickenMinimumDepositMustBeLarger.selector, chickenPool.MINIMUM_DEPOSIT_AMOUNT())
+            abi.encodeWithSelector(RewardChicken.ChickenMinimumDepositMustBeLarger.selector, chickenPool.MINIMUM_DEPOSIT_AMOUNT())
         );
         chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, REWARD_AMOUNT, DEPOSIT_AMOUNT - 1);
     }
@@ -152,7 +152,7 @@ contract PlayChickenTest is Test {
         memeToken.approve(CHICKEN_POOL, 100);
         vm.expectRevert(
             abi.encodeWithSelector(
-                PlayChicken.ChickenRewardAndProtocolFeeNotMet.selector,
+                RewardChicken.ChickenRewardAndProtocolFeeNotMet.selector,
                 chickenPool.MINIMUM_REWARD_AMOUNT(),
                 chickenPool.MINIMUM_DEPOSIT_AMOUNT()
             )
@@ -166,7 +166,7 @@ contract PlayChickenTest is Test {
         memeToken.approve(CHICKEN_POOL, REWARD_AMOUNT);
         vm.expectRevert(
             abi.encodeWithSelector(
-                PlayChicken.ChickenRewardAndProtocolFeeNotMet.selector,
+                RewardChicken.ChickenRewardAndProtocolFeeNotMet.selector,
                 chickenPool.MINIMUM_REWARD_AMOUNT(),
                 chickenPool.MINIMUM_DEPOSIT_AMOUNT()
             )
@@ -203,10 +203,10 @@ contract PlayChickenTest is Test {
     }
 
     function testJoinInvalidId() public {
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenIdInvalid.selector, 0));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenIdInvalid.selector, 0));
         chickenPool.join(0, DEPOSIT_AMOUNT);
         uint256 maxcount = chickenPool.chickenCount() + 1;
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenIdInvalid.selector, maxcount));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenIdInvalid.selector, maxcount));
         chickenPool.join(maxcount, DEPOSIT_AMOUNT);
     }
 
@@ -221,10 +221,10 @@ contract PlayChickenTest is Test {
         vm.startPrank(PLAYER1);
         memeToken.approve(CHICKEN_POOL, DEPOSIT_AMOUNT);
         vm.roll(start + 1);
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenRunning.selector));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenRunning.selector));
         chickenPool.join(1, DEPOSIT_AMOUNT);
         vm.roll(end + 1);
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenRunning.selector));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenRunning.selector));
         chickenPool.join(1, DEPOSIT_AMOUNT);
         vm.stopPrank();
     }
@@ -238,7 +238,7 @@ contract PlayChickenTest is Test {
         vm.startPrank(PLAYER1);
         memeToken.approve(CHICKEN_POOL, DEPOSIT_AMOUNT - 1);
         vm.expectRevert(
-            abi.encodeWithSelector(PlayChicken.ChickenMinimumDepositNotMet.selector, chickenPool.MINIMUM_DEPOSIT_AMOUNT())
+            abi.encodeWithSelector(RewardChicken.ChickenMinimumDepositNotMet.selector, chickenPool.MINIMUM_DEPOSIT_AMOUNT())
         );
         chickenPool.join(1, DEPOSIT_AMOUNT - 1);
         vm.stopPrank();
@@ -251,7 +251,7 @@ contract PlayChickenTest is Test {
         vm.prank(PROTOCOL);
         chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, REWARD_AMOUNT, DEPOSIT_AMOUNT);
         vm.startPrank(PLAYER1);
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenDepositNotAuthorized.selector, DEPOSIT_AMOUNT));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenDepositNotAuthorized.selector, DEPOSIT_AMOUNT));
         chickenPool.join(1, DEPOSIT_AMOUNT);
         vm.stopPrank();
     }
@@ -275,11 +275,11 @@ contract PlayChickenTest is Test {
     }
 
     function testClaimInvalidChickenId() public {
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenIdInvalid.selector, 0));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenIdInvalid.selector, 0));
         vm.prank(PLAYER1);
         chickenPool.claim(0);
         uint256 maxcount = chickenPool.chickenCount() + 1;
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenIdInvalid.selector, maxcount));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenIdInvalid.selector, maxcount));
         vm.prank(PLAYER1);
         chickenPool.claim(maxcount);
     }
@@ -291,7 +291,7 @@ contract PlayChickenTest is Test {
         vm.prank(PROTOCOL);
         chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, REWARD_AMOUNT, DEPOSIT_AMOUNT);
         vm.roll(block.number + 3);
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.PlayerIsNotInChickenPool.selector, PLAYER1));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.PlayerIsNotInChickenPool.selector, PLAYER1));
         vm.prank(PLAYER1);
         chickenPool.claim(1);
     }
@@ -310,7 +310,7 @@ contract PlayChickenTest is Test {
         memeToken.approve(CHICKEN_POOL, DEPOSIT_AMOUNT);
         chickenPool.join(1, DEPOSIT_AMOUNT);
         vm.roll(block.number + 1);
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenNotFinished.selector));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenNotFinished.selector));
         chickenPool.claim(1);
         vm.stopPrank();
     }
@@ -472,11 +472,11 @@ contract PlayChickenTest is Test {
     }
 
     function testWithdrawInvalidId() public {
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenIdInvalid.selector, 0));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenIdInvalid.selector, 0));
         vm.prank(PLAYER1);
         chickenPool.withdraw(0);
         uint256 maxcount = chickenPool.chickenCount() + 1;
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenIdInvalid.selector, maxcount));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenIdInvalid.selector, maxcount));
         vm.prank(PLAYER1);
         chickenPool.withdraw(maxcount);
     }
@@ -493,7 +493,7 @@ contract PlayChickenTest is Test {
         vm.stopPrank();
         vm.roll(block.number + 3);
         // player should claim rather than withdraw
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenFinished.selector));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenFinished.selector));
         vm.prank(PLAYER1);
         chickenPool.withdraw(1);
     }
@@ -513,7 +513,7 @@ contract PlayChickenTest is Test {
         chickenPool.join(1, DEPOSIT_AMOUNT);
         vm.stopPrank();
         vm.roll(block.number + 1);
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.PlayerIsNotInChickenPool.selector, PLAYER3));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.PlayerIsNotInChickenPool.selector, PLAYER3));
         vm.prank(PLAYER3);
         chickenPool.withdraw(1);
     }
@@ -530,7 +530,7 @@ contract PlayChickenTest is Test {
         vm.stopPrank();
         vm.roll(block.number + 1);
         // player should claim rather than withdraw
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenFinished.selector));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenFinished.selector));
         vm.prank(PLAYER2);
         chickenPool.withdraw(1);
     }
@@ -598,21 +598,21 @@ contract PlayChickenTest is Test {
     }
 
     function testWithdrawProtocolFeeInvalidId() public {
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenIdInvalid.selector, 0));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenIdInvalid.selector, 0));
         vm.prank(PROTOCOL);
         chickenPool.withdrawProtocolFee(0);
         uint256 maxcount = chickenPool.chickenCount() + 1;
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenIdInvalid.selector, maxcount));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenIdInvalid.selector, maxcount));
         vm.prank(PROTOCOL);
         chickenPool.withdrawProtocolFee(maxcount);
     }
 
     function testBalanceInvalidId() public {
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenIdInvalid.selector, 0));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenIdInvalid.selector, 0));
         vm.prank(PLAYER1);
         chickenPool.balance(0, PLAYER1);
         uint256 maxcount = chickenPool.chickenCount() + 1;
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenIdInvalid.selector, maxcount));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenIdInvalid.selector, maxcount));
         vm.prank(PLAYER1);
         chickenPool.balance(maxcount, PLAYER1);
     }
@@ -645,10 +645,10 @@ contract PlayChickenTest is Test {
     }
 
     function testTotalDepositsInvalidId() public {
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenIdInvalid.selector, 0));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenIdInvalid.selector, 0));
         chickenPool.totalDeposits(0);
         uint256 maxcount = chickenPool.chickenCount() + 1;
-        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenIdInvalid.selector, maxcount));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenIdInvalid.selector, maxcount));
         chickenPool.totalDeposits(maxcount);
     }
 
@@ -816,10 +816,10 @@ contract PlayChickenTest is Test {
     }
 
     function mockChickenPool(address _chickenPool) internal {
-        PlayChicken implementation = new PlayChicken();
+        RewardChicken implementation = new RewardChicken();
         bytes memory code = address(implementation).code;
         vm.etch(_chickenPool, code);
-        PlayChicken(_chickenPool).initialize(OWNER);
+        RewardChicken(_chickenPool).initialize(OWNER);
     }
 
     function mockMemeToken(address _memeToken) internal {

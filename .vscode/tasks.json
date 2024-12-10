@@ -90,9 +90,9 @@
             }
         },
         {
-            "label": "chicken_deploytransparentproxy",
+            "label": "reward_deploytransparentproxy",
             "type": "shell",
-            "command": "forge script ./script/PlayChicken.s.sol:PlayChickenDeployScript --sig 'deployTransparentProxy()' --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY} --verify --verifier-url ${VERIFIER_URL} --etherscan-api-key ${ETHERSCAN_API_KEY}",
+            "command": "forge script ./script/RewardChicken.s.sol:RewardChickenDeployScript --sig 'deployTransparentProxy()' --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY} --verify --verifier-url ${VERIFIER_URL} --etherscan-api-key ${ETHERSCAN_API_KEY}",
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
@@ -108,9 +108,9 @@
             }
         },
         {
-            "label": "chicken_upgradetransparentproxy",
+            "label": "reward_upgradetransparentproxy",
             "type": "shell",
-            "command": "forge script ./script/PlayChicken.s.sol:PlayChickenDeployScript --sig 'upgradeTransparentProxy()' --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY} --verify --verifier-url ${VERIFIER_URL} --etherscan-api-key ${ETHERSCAN_API_KEY}",
+            "command": "forge script ./script/RewardChicken.s.sol:RewardChickenDeployScript --sig 'upgradeTransparentProxy()' --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY} --verify --verifier-url ${VERIFIER_URL} --etherscan-api-key ${ETHERSCAN_API_KEY}",
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {

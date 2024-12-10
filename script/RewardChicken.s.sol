@@ -11,35 +11,35 @@ import {
     TransparentUpgradeableProxy
 } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-import {PlayChicken} from "../contracts/PlayChicken.sol";
+import {RewardChicken} from "../contracts/RewardChicken.sol";
 
-contract PlayChickenDeployScript is Script {
-    event PlayChickenDeployed(address playChickenProxy, address playChicken);
-    event PlayChickenUpgraded(address playChickenProxy, address playChicken);
+contract RewardChickenDeployScript is Script {
+    event RewardChickenDeployed(address rewardChickenProxy, address rewardChicken);
+    event RewardChickenUpgraded(address rewardChickenProxy, address rewardChicken);
 
     function deployTransparentProxy() public {
         address admin = vm.envAddress("CHICKEN_POOL_ADMIN");
         address protocolAdmin = vm.envAddress("PROTOCOL_ADMIN");
         address deploymentAdmin = msg.sender;
-        bytes memory initializationData = abi.encodeWithSelector(PlayChicken.initialize.selector, deploymentAdmin);
+        bytes memory initializationData = abi.encodeWithSelector(RewardChicken.initialize.selector, deploymentAdmin);
         vm.startBroadcast();
-        address implementation = address(new PlayChicken());
+        address implementation = address(new RewardChicken());
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(implementation, admin, initializationData);
         address proxyAddress = address(proxy);
 
         console.log("TransparentUpgradeableProxy deployed at: ", proxyAddress);
-        emit PlayChickenDeployed(proxyAddress, implementation);
-        PlayChicken playChicken = PlayChicken(proxyAddress);
+        emit RewardChickenDeployed(proxyAddress, implementation);
+        RewardChicken rewardChicken = RewardChicken(proxyAddress);
         if (admin != deploymentAdmin) {
-            playChicken.grantRole(playChicken.DEFAULT_ADMIN_ROLE(), admin);
-            playChicken.revokeRole(playChicken.DEFAULT_ADMIN_ROLE(), deploymentAdmin);
+            rewardChicken.grantRole(rewardChicken.DEFAULT_ADMIN_ROLE(), admin);
+            rewardChicken.revokeRole(rewardChicken.DEFAULT_ADMIN_ROLE(), deploymentAdmin);
             console.log("Pool admin role is ", admin);
             console.log("Deployment role has been renounced ", deploymentAdmin);
         } else {
             console.log("Pool admin role is ", admin);
         }
-        playChicken.grantRole(playChicken.PAUSER_ROLE(), admin);
-        playChicken.grantRole(playChicken.PROTOCOL_ROLE(), protocolAdmin);
+        rewardChicken.grantRole(rewardChicken.PAUSER_ROLE(), admin);
+        rewardChicken.grantRole(rewardChicken.PROTOCOL_ROLE(), protocolAdmin);
         console.log("Protocol admin role is ", protocolAdmin);
         vm.stopBroadcast();
     }
@@ -48,11 +48,11 @@ contract PlayChickenDeployScript is Script {
         address proxyAdmin = vm.envAddress("PROXY_ADMIN");
         address proxyAddress = vm.envAddress("PLAY_CHICKEN_PROXY");
         vm.startBroadcast();
-        address implementation = address(new PlayChicken());
+        address implementation = address(new RewardChicken());
         ITransparentUpgradeableProxy poolProxy = ITransparentUpgradeableProxy(proxyAddress);
         ProxyAdmin(proxyAdmin).upgradeAndCall(poolProxy, implementation, "");
         console.log("TransparentUpgradeableProxy upgraded to: ", implementation);
-        emit PlayChickenUpgraded(proxyAddress, implementation);
+        emit RewardChickenUpgraded(proxyAddress, implementation);
         vm.stopBroadcast();
     }
 }
