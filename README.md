@@ -141,9 +141,9 @@ $ forge script ./script/PlayChicken.s.sol:DeployPlayChickenScript --sig 'upgrade
 
 | Network | Address                                    | Contract                    | Notes                       | Verified                                                                        |
 | ------- | ------------------------------------------ | --------------------------- | --------------------------- | ------------------------------------------------------------------------------- |
-| Sepolia | 0xd9bf5f4C94dED9558f8385C90b4f372f709c1F4B | ProxyAdmin                  | Reward Pool Proxy Delegate | https://sepolia.etherscan.io/address/0xd9bf5f4c94ded9558f8385c90b4f372f709c1f4b |
-| Sepolia | 0x896d6e05a6b74E0D82660426e25b789003C404Fd | TransparentUpgradeableProxy | Reward Pool Proxy          | https://sepolia.etherscan.io/address/0x896d6e05a6b74e0d82660426e25b789003c404fd |
-| Sepolia | 0x5C8a691f42fa413466ca447bcCC6FC85f6cfb3ba | PlayChicken                 | Reward Pool Implementation | https://sepolia.etherscan.io/address/0x5C8a691f42fa413466ca447bcCC6FC85f6cfb3ba |
+| Sepolia | 0x745e2a14d433811E0B65e72b0abdEaE52d696959 | ProxyAdmin                  | Reward Pool Proxy Delegate | https://sepolia.etherscan.io/address/0x745e2a14d433811E0B65e72b0abdEaE52d696959 |
+| Sepolia | 0x0c41734FD47D62F26B49f096210063df6307d618 | TransparentUpgradeableProxy | Reward Pool Proxy          | https://sepolia.etherscan.io/address/0x0c41734FD47D62F26B49f096210063df6307d618 |
+| Sepolia | 0xAF0067Fd880a9A45B1584AE2523Ac006c2745925 | PlayChicken                 | Reward Pool Implementation | https://sepolia.etherscan.io/address/0xAF0067Fd880a9A45B1584AE2523Ac006c2745925 |
 | Sepolia | 0xe27FA48f938913c70a6b02587D003078e786c74c | ProxyAdmin                  | Launcher Proxy Delegate     | https://sepolia.etherscan.io/address/0xe27fa48f938913c70a6b02587d003078e786c74c |
 | Sepolia | 0x4db097b90530f111e88325e514c9a0d59392db9e | TransparentUpgradeableProxy | Launcher Pool Proxy         | https://sepolia.etherscan.io/address/0x4db097b90530f111e88325e514c9a0d59392db9e |
 | Sepolia | 0xAb24873BF6b7f14d3f8Ae0716193Da701Ab61a9F | ChickenLauncher             | Launcher implementation     | https://sepolia.etherscan.io/address/0xab24873bf6b7f14d3f8ae0716193da701ab61a9f |

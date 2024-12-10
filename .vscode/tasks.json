@@ -114,9 +114,9 @@
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "PROXY_ADMIN": "0xd9bf5f4C94dED9558f8385C90b4f372f709c1F4B",
-                    "PLAY_CHICKEN_PROXY": "0x896d6e05a6b74E0D82660426e25b789003C404Fd",
-                    "VERIFIER_URL": "https://api-sepolia.etherscan.io/api",
+                    "PROXY_ADMIN": "0x745e2a14d433811E0B65e72b0abdEaE52d696959",
+                    "PLAY_CHICKEN_PROXY": "0x0c41734FD47D62F26B49f096210063df6307d618",
+                    "VERIFIER_URL": "https://eth-sepolia.g.alchemy.com/v2/uoO_-LFYsnyxFuDC1amzK6e_EPPz8Sh8",
                 }
             },
             "dependsOn": "test",

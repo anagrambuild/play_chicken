@@ -54,6 +54,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
         uint256 claimCount;
         uint256 totalDeposits;
         uint256 minimumDeposit;
+        address poolCreator;
     }
 
     uint256 public chickenCount;
@@ -123,6 +124,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
         chicken.rewardDistributed = 0;
         chicken.totalDeposits = 0;
         chicken.minimumDeposit = _minimumDeposit;
+        chicken.poolCreator = msg.sender;
         emit ChickenStarted(chickenCount, _start, _end, _rewardAmount, _token, msg.sender);
     }
 
@@ -158,24 +160,32 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
     function claim(uint256 _chickenId) external whenNotPaused nonReentrant onlyValidChickenPool(_chickenId) {
         Chicken storage chicken = chickens[_chickenId];
         require(chicken.end < block.number || getPlayerCount(_chickenId) == 1, ChickenNotFinished());
-        require(isPlayer(_chickenId, msg.sender), PlayerIsNotInChickenPool(msg.sender));
+        require(isPlayer(_chickenId, msg.sender) || chicken.poolCreator == msg.sender, PlayerIsNotInChickenPool(msg.sender));
 
-        uint256 playerDeposit = balance(_chickenId, msg.sender);
-        uint256 rewardAmount = 0;
-        if (getPlayerCount(_chickenId) - chicken.claimCount == 1) {
-            // last player remaining - get all the remaining reward including dust
-            rewardAmount = chicken.rewardAmount - chicken.rewardDistributed;
+        uint256 playerCount = getPlayerCount(_chickenId);
+
+        if (playerCount > 0) {
+            uint256 playerDeposit = balance(_chickenId, msg.sender);
+            uint256 rewardAmount = 0;
+            if (playerCount - chicken.claimCount == 1) {
+                // last player remaining - get all the remaining reward including dust
+                rewardAmount = chicken.rewardAmount - chicken.rewardDistributed;
+            } else {
+                rewardAmount = (chicken.rewardAmount * playerDeposit) / chicken.totalDeposits;
+            }
+
+            chicken.rewardDistributed += rewardAmount;
+            chicken.claimCount++;
+            playerBalance[_chickenId][msg.sender] = 0;
+            delete playerBalance[_chickenId][msg.sender];
+
+            SafeERC20.safeTransfer(IERC20(chicken.token), msg.sender, playerDeposit + rewardAmount);
+            emit PlayerClaimedReward(_chickenId, msg.sender, rewardAmount);
         } else {
-            rewardAmount = (chicken.rewardAmount * playerDeposit) / chicken.totalDeposits;
+            // if no player joined the pool, the creator can claim the reward
+            SafeERC20.safeTransfer(IERC20(chicken.token), chicken.poolCreator, chicken.rewardAmount);
+            emit PlayerClaimedReward(_chickenId, chicken.poolCreator, chicken.rewardAmount);
         }
-
-        chicken.rewardDistributed += rewardAmount;
-        chicken.claimCount++;
-        playerBalance[_chickenId][msg.sender] = 0;
-        delete playerBalance[_chickenId][msg.sender];
-
-        SafeERC20.safeTransfer(IERC20(chicken.token), msg.sender, playerDeposit + rewardAmount);
-        emit PlayerClaimedReward(_chickenId, msg.sender, rewardAmount);
     }
 
     /**
