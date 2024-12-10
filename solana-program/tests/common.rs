@@ -16,8 +16,11 @@ use solana_sdk::{
 
 pub fn load_program(svm: &mut LiteSVM) -> anyhow::Result<()> {
     let cwd = std::env::current_dir().unwrap();
-    let error = format!("Failed to set current directory to {:?}", cwd);
-    svm.add_program_from_file(ID, "../target/debug/libchicken.so")
+    let error = format!(
+        "Failed to load program from  {:?}/../target/deploy/chicken.so",
+        cwd
+    );
+    svm.add_program_from_file(ID, "../target/deploy/chicken.so")
         .map_err(|_| anyhow::anyhow!(error))
 }
 

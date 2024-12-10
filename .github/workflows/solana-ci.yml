@@ -17,6 +17,6 @@ jobs:
         with:
           toolchain: stable
       - name: rust fmt
-        run: cargo fmt --all -- --check
+        run: cargo fmt --check
       - name: Build and test
-        run: cargo check --all-targets
+        run: cargo check

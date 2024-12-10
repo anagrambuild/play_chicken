@@ -54,7 +54,7 @@ pub fn assert_pool_withdrawable(pool: &Pool) -> std::result::Result<(), ChickenE
 pub fn bps(amount: u64, bps: u16) -> Result<u64> {
     Ok((amount as u128)
         .checked_mul(bps as u128)
-        .ok_or(ErrorCode::InstructionDidNotDeserialize)?
+        .ok_or(ErrorCode::InvalidNumericConversion)?
         .checked_div(10_000)
-        .ok_or(ErrorCode::InstructionDidNotDeserialize)? as u64)
+        .ok_or(ErrorCode::InvalidNumericConversion)? as u64)
 }
