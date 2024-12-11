@@ -11,25 +11,25 @@ import {
     TransparentUpgradeableProxy
 } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-import {RewardChicken} from "../contracts/RewardChicken.sol";
+import {PlayChicken} from "../contracts/PlayChicken.sol";
 
-contract RewardChickenDeployScript is Script {
-    event RewardChickenDeployed(address rewardChickenProxy, address rewardChicken);
-    event RewardChickenUpgraded(address rewardChickenProxy, address rewardChicken);
+contract PlayChickenDeployScript is Script {
+    event PlayChickenDeployed(address rewardChickenProxy, address rewardChicken);
+    event PlayChickenUpgraded(address rewardChickenProxy, address rewardChicken);
 
     function deployTransparentProxy() public {
         address admin = vm.envAddress("CHICKEN_POOL_ADMIN");
         address protocolAdmin = vm.envAddress("PROTOCOL_ADMIN");
         address deploymentAdmin = msg.sender;
-        bytes memory initializationData = abi.encodeWithSelector(RewardChicken.initialize.selector, deploymentAdmin);
+        bytes memory initializationData = abi.encodeWithSelector(PlayChicken.initialize.selector, deploymentAdmin);
         vm.startBroadcast();
-        address implementation = address(new RewardChicken());
+        address implementation = address(new PlayChicken());
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(implementation, admin, initializationData);
         address proxyAddress = address(proxy);
 
         console.log("TransparentUpgradeableProxy deployed at: ", proxyAddress);
-        emit RewardChickenDeployed(proxyAddress, implementation);
-        RewardChicken rewardChicken = RewardChicken(proxyAddress);
+        emit PlayChickenDeployed(proxyAddress, implementation);
+        PlayChicken rewardChicken = PlayChicken(proxyAddress);
         if (admin != deploymentAdmin) {
             rewardChicken.grantRole(rewardChicken.DEFAULT_ADMIN_ROLE(), admin);
             rewardChicken.revokeRole(rewardChicken.DEFAULT_ADMIN_ROLE(), deploymentAdmin);
@@ -48,11 +48,11 @@ contract RewardChickenDeployScript is Script {
         address proxyAdmin = vm.envAddress("PROXY_ADMIN");
         address proxyAddress = vm.envAddress("PLAY_CHICKEN_PROXY");
         vm.startBroadcast();
-        address implementation = address(new RewardChicken());
+        address implementation = address(new PlayChicken());
         ITransparentUpgradeableProxy poolProxy = ITransparentUpgradeableProxy(proxyAddress);
         ProxyAdmin(proxyAdmin).upgradeAndCall(poolProxy, implementation, "");
         console.log("TransparentUpgradeableProxy upgraded to: ", implementation);
-        emit RewardChickenUpgraded(proxyAddress, implementation);
+        emit PlayChickenUpgraded(proxyAddress, implementation);
         vm.stopBroadcast();
     }
 }

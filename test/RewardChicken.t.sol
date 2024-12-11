@@ -109,17 +109,17 @@ contract RewardChickenTest is Test {
     }
 
     function testStartRequiresBlockInFuture() public {
-        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenMustStartInFuture.selector));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.MustStartInFuture.selector));
         chickenPool.start(MEME_TOKEN, block.number, block.number + 1, REWARD_AMOUNT, DEPOSIT_AMOUNT);
     }
 
     function testStartRequiresEndInFuture() public {
-        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenStartAndEndMustBeDifferent.selector));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.StartAndEndMustBeDifferent.selector));
         chickenPool.start(CHICKEN_POOL, block.number + 2, block.number + 1, REWARD_AMOUNT, DEPOSIT_AMOUNT);
     }
 
     function testStartMustBeLessThanEnd() public {
-        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenStartAndEndMustBeDifferent.selector));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.StartAndEndMustBeDifferent.selector));
         chickenPool.start(CHICKEN_POOL, block.number + 1, block.number + 1, REWARD_AMOUNT, DEPOSIT_AMOUNT);
     }
 
@@ -129,9 +129,7 @@ contract RewardChickenTest is Test {
 
     function testStartRequiresMinimumReward() public {
         vm.expectRevert(
-            abi.encodeWithSelector(
-                RewardChicken.ChickenRewardMustBeGreaterThanMinimum.selector, chickenPool.MINIMUM_REWARD_AMOUNT()
-            )
+            abi.encodeWithSelector(RewardChicken.RewardMustBeGreaterThanMinimum.selector, chickenPool.MINIMUM_REWARD_AMOUNT())
         );
         chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, 0, 0);
     }
@@ -142,7 +140,7 @@ contract RewardChickenTest is Test {
 
     function testStartRequiresMinimumDeposit() public {
         vm.expectRevert(
-            abi.encodeWithSelector(RewardChicken.ChickenMinimumDepositMustBeLarger.selector, chickenPool.MINIMUM_DEPOSIT_AMOUNT())
+            abi.encodeWithSelector(RewardChicken.MinimumDepositMustBeLarger.selector, chickenPool.MINIMUM_DEPOSIT_AMOUNT())
         );
         chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, REWARD_AMOUNT, DEPOSIT_AMOUNT - 1);
     }
@@ -152,7 +150,7 @@ contract RewardChickenTest is Test {
         memeToken.approve(CHICKEN_POOL, 100);
         vm.expectRevert(
             abi.encodeWithSelector(
-                RewardChicken.ChickenRewardAndProtocolFeeNotMet.selector,
+                RewardChicken.RewardAndProtocolFeeNotMet.selector,
                 chickenPool.MINIMUM_REWARD_AMOUNT(),
                 chickenPool.MINIMUM_DEPOSIT_AMOUNT()
             )
@@ -166,7 +164,7 @@ contract RewardChickenTest is Test {
         memeToken.approve(CHICKEN_POOL, REWARD_AMOUNT);
         vm.expectRevert(
             abi.encodeWithSelector(
-                RewardChicken.ChickenRewardAndProtocolFeeNotMet.selector,
+                RewardChicken.RewardAndProtocolFeeNotMet.selector,
                 chickenPool.MINIMUM_REWARD_AMOUNT(),
                 chickenPool.MINIMUM_DEPOSIT_AMOUNT()
             )
@@ -239,9 +237,7 @@ contract RewardChickenTest is Test {
         chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, REWARD_AMOUNT, DEPOSIT_AMOUNT);
         vm.startPrank(PLAYER1);
         memeToken.approve(CHICKEN_POOL, DEPOSIT_AMOUNT - 1);
-        vm.expectRevert(
-            abi.encodeWithSelector(RewardChicken.ChickenMinimumDepositNotMet.selector, chickenPool.MINIMUM_DEPOSIT_AMOUNT())
-        );
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.MinimumDepositNotMet.selector, chickenPool.MINIMUM_DEPOSIT_AMOUNT()));
         chickenPool.join(1, DEPOSIT_AMOUNT - 1);
         vm.stopPrank();
     }
@@ -253,7 +249,7 @@ contract RewardChickenTest is Test {
         vm.prank(PROTOCOL);
         chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, REWARD_AMOUNT, DEPOSIT_AMOUNT);
         vm.startPrank(PLAYER1);
-        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ChickenDepositNotAuthorized.selector, DEPOSIT_AMOUNT));
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.DepositNotAuthorized.selector, DEPOSIT_AMOUNT));
         chickenPool.join(1, DEPOSIT_AMOUNT);
         vm.stopPrank();
     }
@@ -692,6 +688,16 @@ contract RewardChickenTest is Test {
             )
         );
         chickenPool.setProtocolFee(2000);
+    }
+
+    function testGetProtocolFeeBalance() public {
+        assertEq(chickenPool.getProtocolFeeBalance(1), 0);
+        uint256 requiredSpend = REWARD_AMOUNT + REWARD_AMOUNT * chickenPool.protocolFeeBps() / chickenPool.BPS();
+        vm.prank(PROTOCOL);
+        memeToken.approve(CHICKEN_POOL, requiredSpend);
+        vm.prank(PROTOCOL);
+        chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, REWARD_AMOUNT, DEPOSIT_AMOUNT);
+        assertEq(chickenPool.getProtocolFeeBalance(1), requiredSpend - REWARD_AMOUNT);
     }
 
     function testPauseContract() public {

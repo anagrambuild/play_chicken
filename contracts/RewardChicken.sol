@@ -31,18 +31,18 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
     event PlayerJoined(uint256 chickenId, address player, uint256 totalDeposits);
 
     error TokenInvalid();
-    error ChickenMustEndInFuture();
-    error ChickenMustStartInFuture();
-    error ChickenStartAndEndMustBeDifferent();
+    error MustEndInFuture();
+    error MustStartInFuture();
+    error StartAndEndMustBeDifferent();
     error ChickenRunning();
-    error ChickenRewardMustBeGreaterThanMinimum(uint256 _minimum);
-    error ChickenMinimumDepositMustBeLarger(uint256 _minimum);
-    error ChickenRewardAndProtocolFeeNotMet(uint256 requiredReward, uint256 protocolFee);
+    error RewardMustBeGreaterThanMinimum(uint256 _minimum);
+    error MinimumDepositMustBeLarger(uint256 _minimum);
+    error RewardAndProtocolFeeNotMet(uint256 requiredReward, uint256 protocolFee);
     error ChickenNotFinished();
     error ChickenFinished();
     error ChickenIdInvalid(uint256 _chickenId);
-    error ChickenMinimumDepositNotMet(uint256 _minimum);
-    error ChickenDepositNotAuthorized(uint256 _minimum);
+    error MinimumDepositNotMet(uint256 _minimum);
+    error DepositNotAuthorized(uint256 _minimum);
     error PlayerIsNotInChickenPool(address player);
     error InsufficientFunds();
     error ProtocolFeeTooLow();
@@ -106,17 +106,17 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
         nonReentrant
     {
         require(_token != address(0), TokenInvalid());
-        require(_start > block.number, ChickenMustStartInFuture());
-        require(_end > block.number, ChickenMustEndInFuture());
-        require(_start < _end, ChickenStartAndEndMustBeDifferent());
-        require(_rewardAmount >= MINIMUM_REWARD_AMOUNT, ChickenRewardMustBeGreaterThanMinimum(MINIMUM_REWARD_AMOUNT));
-        require(_minimumDeposit >= MINIMUM_DEPOSIT_AMOUNT, ChickenMinimumDepositMustBeLarger(MINIMUM_DEPOSIT_AMOUNT));
+        require(_start > block.number, MustStartInFuture());
+        require(_end > block.number, MustEndInFuture());
+        require(_start < _end, StartAndEndMustBeDifferent());
+        require(_rewardAmount >= MINIMUM_REWARD_AMOUNT, RewardMustBeGreaterThanMinimum(MINIMUM_REWARD_AMOUNT));
+        require(_minimumDeposit >= MINIMUM_DEPOSIT_AMOUNT, MinimumDepositMustBeLarger(MINIMUM_DEPOSIT_AMOUNT));
 
         IERC20 poolToken = IERC20(_token);
         uint256 feeRequiredByProtocol = (_rewardAmount * protocolFeeBps) / BPS;
         uint256 depositAmount = feeRequiredByProtocol + _rewardAmount;
         uint256 authorizedAmount = poolToken.allowance(msg.sender, address(this));
-        require(depositAmount <= authorizedAmount, ChickenRewardAndProtocolFeeNotMet(_rewardAmount, feeRequiredByProtocol));
+        require(depositAmount <= authorizedAmount, RewardAndProtocolFeeNotMet(_rewardAmount, feeRequiredByProtocol));
         SafeERC20.safeTransferFrom(IERC20(_token), msg.sender, address(this), depositAmount);
 
         chickenCount++;
@@ -146,9 +146,9 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
     {
         Chicken storage chicken = chickens[_chickenId];
         require(block.number < chicken.start, ChickenRunning());
-        require(_depositAmount >= chicken.minimumDeposit, ChickenMinimumDepositNotMet(chicken.minimumDeposit));
+        require(_depositAmount >= chicken.minimumDeposit, MinimumDepositNotMet(chicken.minimumDeposit));
         uint256 authorizedAmount = IERC20(chicken.token).allowance(msg.sender, address(this));
-        require(_depositAmount <= authorizedAmount, ChickenDepositNotAuthorized(chicken.minimumDeposit));
+        require(_depositAmount <= authorizedAmount, DepositNotAuthorized(chicken.minimumDeposit));
         SafeERC20.safeTransferFrom(IERC20(chicken.token), msg.sender, address(this), _depositAmount);
         chicken.totalDeposits += _depositAmount;
         playerBalance[_chickenId][msg.sender] += _depositAmount;

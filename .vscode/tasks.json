@@ -126,6 +126,42 @@
             }
         },
         {
+            "label": "chicken_deploytransparentproxy",
+            "type": "shell",
+            "command": "forge script ./script/PlayChicken.s.sol:PlayChickenDeployScript --sig 'deployTransparentProxy()' --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY} --verify --verifier-url ${VERIFIER_URL} --etherscan-api-key ${ETHERSCAN_API_KEY}",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CHICKEN_POOL_ADMIN": "${PUBLIC_KEY}",
+                    "PROTOCOL_ADMIN": "${PUBLIC_KEY}",
+                    "VERIFIER_URL": "https://api-sepolia.etherscan.io/api",
+                }
+            },
+            "dependsOn": "test",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "chicken_upgradetransparentproxy",
+            "type": "shell",
+            "command": "forge script ./script/PlayChicken.s.sol:PlayChickenDeployScript --sig 'upgradeTransparentProxy()' --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY} --verify --verifier-url ${VERIFIER_URL} --etherscan-api-key ${ETHERSCAN_API_KEY}",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "PROXY_ADMIN": "0x745e2a14d433811E0B65e72b0abdEaE52d696959",
+                    "PLAY_CHICKEN_PROXY": "0x0c41734FD47D62F26B49f096210063df6307d618",
+                    "VERIFIER_URL": "https://eth-sepolia.g.alchemy.com/v2/uoO_-LFYsnyxFuDC1amzK6e_EPPz8Sh8",
+                }
+            },
+            "dependsOn": "test",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            }
+        },
+        {
             "label": "launcher_deploytransparentproxy",
             "type": "shell",
             "command": "forge script ./script/ChickenLauncher.s.sol:ChickenLauncherDeployScript --sig 'deployTransparentProxy()' --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY} --verify --verifier-url ${VERIFIER_URL} --etherscan-api-key ${ETHERSCAN_API_KEY}",

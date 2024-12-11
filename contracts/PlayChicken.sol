@@ -41,6 +41,7 @@ contract PlayChicken is Initializable, AccessControlUpgradeable, PausableUpgrade
     error ChickenIdInvalid(uint256 chickenId);
     error PlayerIsNotInChickenPool(address player);
     error ProtocolFeeTooLow();
+    error WaitForGameStart();
 
     enum ChickenState {
         WAITING,
@@ -145,6 +146,7 @@ contract PlayChicken is Initializable, AccessControlUpgradeable, PausableUpgrade
      */
     function withdraw(uint256 _chickenId) external whenNotPaused nonReentrant onlyValidChickenPool(_chickenId) {
         Chicken storage chicken = chickens[_chickenId];
+        require(chicken.gameStatus != ChickenState.WAITING, WaitForGameStart());
         require(chicken.gameStatus != ChickenState.FINISHED, ChickenFinished());
         require(isPlayer(_chickenId, msg.sender), PlayerIsNotInChickenPool(msg.sender));
         require(getPlayerCount(_chickenId) > 1, PlayerIsWinner());
