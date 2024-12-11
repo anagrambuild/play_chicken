@@ -114,9 +114,9 @@
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "PROXY_ADMIN": "0x745e2a14d433811E0B65e72b0abdEaE52d696959",
+                    "PROXY_ADMIN": "0x1255a805E0764bEA83688104e1E235cF63db0f75",
                     "PLAY_CHICKEN_PROXY": "0x0c41734FD47D62F26B49f096210063df6307d618",
-                    "VERIFIER_URL": "https://eth-sepolia.g.alchemy.com/v2/uoO_-LFYsnyxFuDC1amzK6e_EPPz8Sh8",
+                    "VERIFIER_URL": "https://api-sepolia.etherscan.io/api",
                 }
             },
             "dependsOn": "test",
@@ -150,9 +150,9 @@
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "PROXY_ADMIN": "0x745e2a14d433811E0B65e72b0abdEaE52d696959",
-                    "PLAY_CHICKEN_PROXY": "0x0c41734FD47D62F26B49f096210063df6307d618",
-                    "VERIFIER_URL": "https://eth-sepolia.g.alchemy.com/v2/uoO_-LFYsnyxFuDC1amzK6e_EPPz8Sh8",
+                    "PROXY_ADMIN": "0x271826c84B5Fc4017B5B0809e3A7CD8fC5C02354",
+                    "PLAY_CHICKEN_PROXY": "0x9ee040266605a8b0b65d859cfa6e2b7d5f34c163",
+                    "VERIFIER_URL": "https://api-sepolia.etherscan.io/api",
                 }
             },
             "dependsOn": "test",
