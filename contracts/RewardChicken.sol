@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.20;
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -21,6 +21,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
     uint256 public constant BASE_AMOUNT = 10 ** 18;
     uint256 public constant MINIMUM_REWARD_AMOUNT = 100 * BASE_AMOUNT; // 100 token
     uint256 public constant MINIMUM_DEPOSIT_AMOUNT = 1 * BASE_AMOUNT; // 1 token
+    uint256 public constant MINIMUM_PROTOCOL_FEE = 50; // 0.5%
 
     event ProtocolFeeChanged(uint256 protocolFee);
     event ProtocolFeeWithdrawn(uint256 amount, address token);
@@ -29,6 +30,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
     event ChickenStarted(uint256 chickenId, uint256 start, uint256 end, uint256 reward, address token, address createdBy);
     event PlayerJoined(uint256 chickenId, address player, uint256 totalDeposits);
 
+    error TokenInvalid();
     error ChickenMustEndInFuture();
     error ChickenMustStartInFuture();
     error ChickenStartAndEndMustBeDifferent();
@@ -42,8 +44,8 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
     error ChickenMinimumDepositNotMet(uint256 _minimum);
     error ChickenDepositNotAuthorized(uint256 _minimum);
     error PlayerIsNotInChickenPool(address player);
-
-    uint256 public protocolFee; // protocol fee in bps
+    error InsufficientFunds();
+    error ProtocolFeeTooLow();
 
     struct Chicken {
         address token;
@@ -56,6 +58,8 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
         uint256 minimumDeposit;
         address poolCreator;
     }
+
+    uint256 public protocolFeeBps; // protocol fee in bps
 
     uint256 public chickenCount;
 
@@ -86,7 +90,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
         _grantRole(DEFAULT_ADMIN_ROLE, _owner);
         _grantRole(PAUSER_ROLE, _owner);
         chickenCount = 0;
-        protocolFee = 100; // 1%
+        protocolFeeBps = 100; // 1%
     }
 
     /**
@@ -101,6 +105,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
         whenNotPaused
         nonReentrant
     {
+        require(_token != address(0), TokenInvalid());
         require(_start > block.number, ChickenMustStartInFuture());
         require(_end > block.number, ChickenMustEndInFuture());
         require(_start < _end, ChickenStartAndEndMustBeDifferent());
@@ -108,7 +113,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
         require(_minimumDeposit >= MINIMUM_DEPOSIT_AMOUNT, ChickenMinimumDepositMustBeLarger(MINIMUM_DEPOSIT_AMOUNT));
 
         IERC20 poolToken = IERC20(_token);
-        uint256 feeRequiredByProtocol = (_rewardAmount * protocolFee) / BPS;
+        uint256 feeRequiredByProtocol = (_rewardAmount * protocolFeeBps) / BPS;
         uint256 depositAmount = feeRequiredByProtocol + _rewardAmount;
         uint256 authorizedAmount = poolToken.allowance(msg.sender, address(this));
         require(depositAmount <= authorizedAmount, ChickenRewardAndProtocolFeeNotMet(_rewardAmount, feeRequiredByProtocol));
@@ -166,6 +171,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
 
         if (playerCount > 0) {
             uint256 playerDeposit = balance(_chickenId, msg.sender);
+            require(playerDeposit > 0, InsufficientFunds());
             uint256 rewardAmount = 0;
             if (playerCount - chicken.claimCount == 1) {
                 // last player remaining - get all the remaining reward including dust
@@ -201,6 +207,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
         require(isPlayer(_chickenId, msg.sender), PlayerIsNotInChickenPool(msg.sender));
 
         uint256 currentBalance = playerBalance[_chickenId][msg.sender];
+        require(currentBalance > 0, InsufficientFunds());
         chicken.totalDeposits -= currentBalance;
         playerBalance[_chickenId][msg.sender] = 0;
         delete playerBalance[_chickenId][msg.sender];
@@ -223,7 +230,8 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
         onlyValidChickenPool(_chickenId)
     {
         Chicken storage chicken = chickens[_chickenId];
-        uint256 feeBalance = chicken.rewardAmount * protocolFee / BPS;
+        uint256 feeBalance = chicken.rewardAmount * protocolFeeBps / BPS;
+        require(feeBalance > 0, InsufficientFunds());
         SafeERC20.safeTransfer(IERC20(chicken.token), msg.sender, feeBalance);
         emit ProtocolFeeWithdrawn(feeBalance, chicken.token);
     }
@@ -260,7 +268,8 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
      * @param _protocolFee protocol fee in bps
      */
     function setProtocolFee(uint256 _protocolFee) external onlyRole(PROTOCOL_ROLE) {
-        protocolFee = _protocolFee;
+        require(_protocolFee >= MINIMUM_PROTOCOL_FEE, ProtocolFeeTooLow());
+        protocolFeeBps = _protocolFee;
         emit ProtocolFeeChanged(_protocolFee);
     }
 
@@ -270,7 +279,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
      */
     function getProtocolFeeBalance(uint256 _chickenId) external view returns (uint256) {
         Chicken storage chicken = chickens[_chickenId];
-        return chicken.rewardAmount * protocolFee / BPS;
+        return chicken.rewardAmount * protocolFeeBps / BPS;
     }
 
     /**
