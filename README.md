@@ -139,15 +139,18 @@ $ forge script ./script/PlayChicken.s.sol:DeployPlayChickenScript --sig 'upgrade
 
 ### Deployment Adressess
 
-| Network | Address                                    | Contract                    | Notes                       | Verified                                                                        |
-| ------- | ------------------------------------------ | --------------------------- | --------------------------- | ------------------------------------------------------------------------------- |
-| Sepolia | 0xd9bf5f4C94dED9558f8385C90b4f372f709c1F4B | ProxyAdmin                  | Chicken Pool Proxy Delegate | https://sepolia.etherscan.io/address/0xd9bf5f4c94ded9558f8385c90b4f372f709c1f4b |
-| Sepolia | 0x896d6e05a6b74E0D82660426e25b789003C404Fd | TransparentUpgradeableProxy | Chicken Pool Proxy          | https://sepolia.etherscan.io/address/0x896d6e05a6b74e0d82660426e25b789003c404fd |
-| Sepolia | 0x5C8a691f42fa413466ca447bcCC6FC85f6cfb3ba | PlayChicken                 | Chicken Pool Implementation | https://sepolia.etherscan.io/address/0x5C8a691f42fa413466ca447bcCC6FC85f6cfb3ba |
-| Sepolia | 0xe27FA48f938913c70a6b02587D003078e786c74c | ProxyAdmin                  | Launcher Proxy Delegate     | https://sepolia.etherscan.io/address/0xe27fa48f938913c70a6b02587d003078e786c74c |
-| Sepolia | 0x4db097b90530f111e88325e514c9a0d59392db9e | TransparentUpgradeableProxy | Launcher Pool Proxy         | https://sepolia.etherscan.io/address/0x4db097b90530f111e88325e514c9a0d59392db9e |
-| Sepolia | 0xAb24873BF6b7f14d3f8Ae0716193Da701Ab61a9F | ChickenLauncher             | Launcher implementation     | https://sepolia.etherscan.io/address/0xab24873bf6b7f14d3f8ae0716193da701ab61a9f |
-| Sepolia | 0x40c5215E1A69B7934948E9c28FCE20046208702E | ChickenTokenUpgradeable     | Chicken Token               | https://sepolia.etherscan.io/address/0x40c5215e1a69b7934948e9c28fce20046208702e |
+| Network | Address                                    | Contract                    | Notes                            | Verified                                                                        |
+| ------- | ------------------------------------------ | --------------------------- | -------------------------------- | ------------------------------------------------------------------------------- |
+| Sepolia | 0x271826c84B5Fc4017B5B0809e3A7CD8fC5C02354 | ProxyAdmin                  | Play Chicken Pool Proxy Delegate | https://sepolia.etherscan.io/address/0x271826c84B5Fc4017B5B0809e3A7CD8fC5C02354 |
+| Sepolia | 0x9ee040266605a8b0b65d859cfa6e2b7d5f34c163 | TransparentUpgradeableProxy | Play Chicken Proxy               | https://sepolia.etherscan.io/address/0x9ee040266605a8b0b65d859cfa6e2b7d5f34c163 |
+| Sepolia | 0xba8c13bd4462ae9405cd0749c07f41cecde943ab | PlayChicken                 | Play Chicken Implementation      | https://sepolia.etherscan.io/address/0xba8c13bd4462ae9405cd0749c07f41cecde943ab |
+| Sepolia | 0x1255a805E0764bEA83688104e1E235cF63db0f75 | ProxyAdmin                  | Reward Pool Proxy Delegate       | https://sepolia.etherscan.io/address/0x1255a805E0764bEA83688104e1E235cF63db0f75 |
+| Sepolia | 0xf31799A6893EE2508B2b12eab12b9146B074A5f3 | TransparentUpgradeableProxy | Reward Pool Proxy                | https://sepolia.etherscan.io/address/0xf31799A6893EE2508B2b12eab12b9146B074A5f3 |
+| Sepolia | 0x95E73594C15F4276892DE91c9982018cf63eF359 | RewardChicken               | Reward Pool Implementation       | https://sepolia.etherscan.io/address/0x95E73594C15F4276892DE91c9982018cf63eF359 |
+| Sepolia | 0xe27FA48f938913c70a6b02587D003078e786c74c | ProxyAdmin                  | Launcher Proxy Delegate          | https://sepolia.etherscan.io/address/0xe27fa48f938913c70a6b02587d003078e786c74c |
+| Sepolia | 0x4db097b90530f111e88325e514c9a0d59392db9e | TransparentUpgradeableProxy | Launcher Pool Proxy              | https://sepolia.etherscan.io/address/0x4db097b90530f111e88325e514c9a0d59392db9e |
+| Sepolia | 0xAb24873BF6b7f14d3f8Ae0716193Da701Ab61a9F | ChickenLauncher             | Launcher implementation          | https://sepolia.etherscan.io/address/0xab24873bf6b7f14d3f8ae0716193da701ab61a9f |
+| Sepolia | 0x40c5215E1A69B7934948E9c28FCE20046208702E | ChickenTokenUpgradeable     | Chicken Token                    | https://sepolia.etherscan.io/address/0x40c5215e1a69b7934948e9c28fce20046208702e |
 
 
 ## Foundry

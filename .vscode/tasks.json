@@ -90,6 +90,42 @@
             }
         },
         {
+            "label": "reward_deploytransparentproxy",
+            "type": "shell",
+            "command": "forge script ./script/RewardChicken.s.sol:RewardChickenDeployScript --sig 'deployTransparentProxy()' --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY} --verify --verifier-url ${VERIFIER_URL} --etherscan-api-key ${ETHERSCAN_API_KEY}",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CHICKEN_POOL_ADMIN": "${PUBLIC_KEY}",
+                    "PROTOCOL_ADMIN": "${PUBLIC_KEY}",
+                    "VERIFIER_URL": "https://api-sepolia.etherscan.io/api",
+                }
+            },
+            "dependsOn": "test",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "reward_upgradetransparentproxy",
+            "type": "shell",
+            "command": "forge script ./script/RewardChicken.s.sol:RewardChickenDeployScript --sig 'upgradeTransparentProxy()' --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY} --verify --verifier-url ${VERIFIER_URL} --etherscan-api-key ${ETHERSCAN_API_KEY}",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "PROXY_ADMIN": "0x1255a805E0764bEA83688104e1E235cF63db0f75",
+                    "PLAY_CHICKEN_PROXY": "0x0c41734FD47D62F26B49f096210063df6307d618",
+                    "VERIFIER_URL": "https://api-sepolia.etherscan.io/api",
+                }
+            },
+            "dependsOn": "test",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            }
+        },
+        {
             "label": "chicken_deploytransparentproxy",
             "type": "shell",
             "command": "forge script ./script/PlayChicken.s.sol:PlayChickenDeployScript --sig 'deployTransparentProxy()' --slow --broadcast --rpc-url ${RPC_URL} --private-key ${PRIVATE_KEY} --verify --verifier-url ${VERIFIER_URL} --etherscan-api-key ${ETHERSCAN_API_KEY}",
@@ -114,8 +150,8 @@
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "PROXY_ADMIN": "0xd9bf5f4C94dED9558f8385C90b4f372f709c1F4B",
-                    "PLAY_CHICKEN_PROXY": "0x896d6e05a6b74E0D82660426e25b789003C404Fd",
+                    "PROXY_ADMIN": "0x271826c84B5Fc4017B5B0809e3A7CD8fC5C02354",
+                    "PLAY_CHICKEN_PROXY": "0x9ee040266605a8b0b65d859cfa6e2b7d5f34c163",
                     "VERIFIER_URL": "https://api-sepolia.etherscan.io/api",
                 }
             },

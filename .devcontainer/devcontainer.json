@@ -14,7 +14,8 @@
 				"rust-lang.rust-analyzer",
 				"fill-labs.dependi",
 				"vadimcn.vscode-lldb",
-				"JuanBlanco.solidity"
+				"JuanBlanco.solidity",
+				"yzhang.markdown-all-in-one"
 			]
 		}
 	},

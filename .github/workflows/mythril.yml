@@ -35,6 +35,6 @@ jobs:
           version: nightly
       - name: flatten contract
         run: |
-          forge flatten contracts/PlayChicken.sol -o out/PlayChickenFlattened.sol
+          forge flatten contracts/RewardChicken.sol -o out/RewardChickenFlattened.sol
       - name: Run mythril
-        run: myth analyze out/PlayChickenFlattened.sol
+        run: myth analyze out/RewardChickenFlattened.sol
