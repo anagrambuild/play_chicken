@@ -710,9 +710,9 @@ dependencies = [
 
 [[package]]
 name = "bytemuck"
-version = "1.19.0"
+version = "1.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8334215b81e418a0a7bdb8ef0849474f40bb10c8b71f1c4ed315cff49f32494d"
+checksum = "8b37c88a63ffd85d15b406896cc343916d7cf57838a847b3a6f2ca5d39a5695a"
 dependencies = [
  "bytemuck_derive",
 ]
@@ -2163,6 +2163,12 @@ name = "pin-utils"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
+
+[[package]]
+name = "pinocchio"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9f716de2190437efa787dd7414f4bcea88d22c2f81bbeecabb7db6d9cc326bd"
 
 [[package]]
 name = "polyval"
@@ -4414,6 +4420,21 @@ name = "void"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
+
+[[package]]
+name = "volumizer"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "borsh 0.10.4",
+ "bytemuck",
+ "litesvm",
+ "litesvm-token",
+ "pinocchio",
+ "rand 0.8.5",
+ "solana-sdk",
+ "test-log",
+]
 
 [[package]]
 name = "want"
