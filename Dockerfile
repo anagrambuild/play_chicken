@@ -1,5 +1,5 @@
 # Stage 1: Foundry dev env
-FROM ghcr.io/collectivexyz/foundry:latest
+FROM ghcr.io/collectivexyz/foundry:unstable-slim
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
     sudo apt-get update && \
