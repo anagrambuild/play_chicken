@@ -1,17 +1,17 @@
 mod common;
 use anyhow::Result;
 use borsh::BorshDeserialize;
-use chicken::{actions::InitializePoolArgs, error::ChickenError, state::Pool};
+use chicken::{actions::InitializePoolArgs, state::Pool};
 use common::*;
-use litesvm_token::spl_token;
-use solana_sdk::program_pack::Pack;
+use litesvm_token::spl_token::{self, solana_program};
+use solana_sdk::{program_pack::Pack, pubkey::Pubkey, signer::Signer};
 
 #[test_log::test]
 fn test_deposit_many() -> Result<()> {
     let mut ctx = setup_test_context()?;
     let current_clock = ctx.svm.get_sysvar::<solana_program::clock::Clock>().slot;
     let args = InitializePoolArgs {
-        pool_id: [0; 16],
+        pool_id: ctx.pool_id,
         pool_mode: chicken::state::PoolMode::LastOutWinner,
         start_time: current_clock + 10,
         end_time: current_clock + 1000,
@@ -20,7 +20,7 @@ fn test_deposit_many() -> Result<()> {
         max_deposit: None,
         total_deposit_limit: None,
     };
-    setup_pool(&mut ctx, &args)?;
+    setup_pool(&mut ctx, args)?;
     let number_of_users = 10;
     let mut total_deposited = 0;
     let mut fee_amount = 0;
@@ -28,21 +28,14 @@ fn test_deposit_many() -> Result<()> {
     ctx.svm.warp_to_slot(current_clock + 11);
     for _ in 0..number_of_users {
         let random = rand::random::<u32>() as u64;
-        let (user, user_ata) = setup_user(&mut ctx, random)?;
-
-        let user_position_key = deposit(
-            &mut ctx.svm,
-            &ctx.mint,
-            &ctx.pool_key,
-            &user,
-            random,
-        )?;
-
+        let (user, _) = setup_user(&mut ctx, random)?;
+        let user_position_key = deposit(&mut ctx.svm, &ctx.mint, &ctx.pool_key, &user, random)?;
         let pool = ctx.svm.get_account(&ctx.pool_key).unwrap();
-        let pool = Pool::deserialize(&mut &pool.data[8..]).unwrap();
+        let pool = Pool::deserialize(&mut &pool.data[..]).unwrap();
         let user_position_account = ctx.svm.get_account(&user_position_key).unwrap();
+        println!("{:?}", &mut &user_position_account.data[..]);
         let user_position =
-            chicken::state::UserPosition::deserialize(&mut &user_position_account.data[8..])
+            chicken::state::UserPosition::deserialize(&mut &user_position_account.data[..])
                 .unwrap();
 
         let fee = chicken::actions::bps(random, pool.deposit_fee_bps).unwrap();
@@ -57,7 +50,7 @@ fn test_deposit_many() -> Result<()> {
     }
 
     let pool_account = ctx.svm.get_account(&ctx.pool_key).unwrap();
-    let pool = Pool::deserialize(&mut &pool_account.data[8..]).unwrap();
+    let pool = Pool::deserialize(&mut &pool_account.data[..]).unwrap();
     let pool_ata_account = ctx.svm.get_account(&ctx.pool_ata).unwrap();
     let pool_ata_obj = spl_token::state::Account::unpack(&pool_ata_account.data).unwrap();
 
@@ -75,7 +68,7 @@ fn test_deposit_pool_not_started() -> Result<()> {
     let mut ctx = setup_test_context()?;
     let current_clock = ctx.svm.get_sysvar::<solana_program::clock::Clock>().slot;
     let args = InitializePoolArgs {
-        pool_id: [0; 16],
+        pool_id: ctx.pool_id,
         pool_mode: chicken::state::PoolMode::LastOutWinner,
         start_time: current_clock + 100,
         end_time: current_clock + 1000,
@@ -84,13 +77,12 @@ fn test_deposit_pool_not_started() -> Result<()> {
         max_deposit: None,
         total_deposit_limit: None,
     };
-    setup_pool(&mut ctx, &args)?;
+    setup_pool(&mut ctx, args)?;
 
     let amount = 1000;
     let (user, user_ata) = setup_user(&mut ctx, amount)?;
     let result = deposit(&mut ctx.svm, &ctx.mint, &ctx.pool_key, &user, amount);
-    println!("{:?}", result);
-    assert!(result.unwrap_err().to_string().contains("Pool is Pending"));
+    assert!(result.unwrap_err().to_string().contains("PoolPending"));
     Ok(())
 }
 
@@ -98,8 +90,9 @@ fn test_deposit_pool_not_started() -> Result<()> {
 fn test_deposit_pool_ended() -> Result<()> {
     let mut ctx = setup_test_context()?;
     let current_slot = ctx.svm.get_sysvar::<solana_program::clock::Clock>().slot;
+
     let args = InitializePoolArgs {
-        pool_id: [0; 16],
+        pool_id: ctx.pool_id,
         pool_mode: chicken::state::PoolMode::LastOutWinner,
         start_time: current_slot + 1,
         end_time: current_slot + 10,
@@ -108,7 +101,7 @@ fn test_deposit_pool_ended() -> Result<()> {
         max_deposit: None,
         total_deposit_limit: None,
     };
-    setup_pool(&mut ctx, &args)?;
+    setup_pool(&mut ctx, args)?;
 
     let amount = 1000;
     let (user, user_ata) = setup_user(&mut ctx, amount)?;
@@ -118,7 +111,7 @@ fn test_deposit_pool_ended() -> Result<()> {
     assert!(result.is_ok());
     ctx.svm.warp_to_slot(current_slot + 100);
     let result2 = deposit(&mut ctx.svm, &ctx.mint, &ctx.pool_key, &user2, amount);
-    assert!(result2.unwrap_err().to_string().contains("Pool has Ended"));
+    assert!(result2.unwrap_err().to_string().contains("PoolEnded"));
     Ok(())
 }
 
@@ -159,7 +152,7 @@ fn test_deposit_pool_ended() -> Result<()> {
 fn test_deposit_below_minimum() -> Result<()> {
     let mut ctx = setup_test_context()?;
     let args = InitializePoolArgs {
-        pool_id: [0; 16],
+        pool_id: ctx.pool_id,
         pool_mode: chicken::state::PoolMode::LastOutWinner,
         start_time: 100,
         end_time: 200,
@@ -168,7 +161,7 @@ fn test_deposit_below_minimum() -> Result<()> {
         max_deposit: None,
         total_deposit_limit: None,
     };
-    setup_pool(&mut ctx, &args)?;
+    setup_pool(&mut ctx, args)?;
     let amount = 500; // Try to deposit less than minimum
     let (user, user_ata) = setup_user(&mut ctx, amount)?;
 
@@ -180,8 +173,17 @@ fn test_deposit_below_minimum() -> Result<()> {
 #[test_log::test]
 fn test_deposit_above_limit() -> Result<()> {
     let mut ctx = setup_test_context()?;
+    let id = [0; 16];
+    let (pkey, bump) = Pubkey::find_program_address(
+        &[
+            b"pool".as_ref(),
+            [0; 16].as_ref(),
+            ctx.creator.pubkey().as_ref(),
+        ],
+        &Pubkey::from(chicken::ID),
+    );
     let args = InitializePoolArgs {
-        pool_id: [0; 16],
+        pool_id: id,
         pool_mode: chicken::state::PoolMode::LastOutWinner,
         start_time: 0,
         end_time: 100,
@@ -190,12 +192,12 @@ fn test_deposit_above_limit() -> Result<()> {
         max_deposit: Some(1000),
         total_deposit_limit: None,
     };
-    setup_pool(&mut ctx, &args)?;
+    setup_pool(&mut ctx, args)?;
 
     let amount = 2000; // Try to deposit more than limit
     let (user, user_ata) = setup_user(&mut ctx, amount)?;
 
-    let result = deposit(&mut ctx.svm, &ctx.mint, &ctx.pool_key, &user, amount);
+    let result = deposit(&mut ctx.svm, &ctx.mint, &pkey, &user, amount);
     assert!(result.is_err());
     Ok(())
 }
@@ -205,7 +207,7 @@ fn test_deposit_above_total_limit() -> Result<()> {
     let mut ctx = setup_test_context()?;
     let current_clock = ctx.svm.get_sysvar::<solana_program::clock::Clock>().slot;
     let args = InitializePoolArgs {
-        pool_id: [0; 16],
+        pool_id: ctx.pool_id,
         pool_mode: chicken::state::PoolMode::LastOutWinner,
         start_time: current_clock + 10,
         end_time: current_clock + 1000,
@@ -214,7 +216,7 @@ fn test_deposit_above_total_limit() -> Result<()> {
         max_deposit: None,
         total_deposit_limit: Some(5000), // Set total deposit limit
     };
-    setup_pool(&mut ctx, &args)?;
+    setup_pool(&mut ctx, args)?;
 
     ctx.svm.warp_to_slot(current_clock + 11);
 
@@ -223,6 +225,7 @@ fn test_deposit_above_total_limit() -> Result<()> {
     let (user1, user1_ata) = setup_user(&mut ctx, amount1)?;
     let result1 = deposit(&mut ctx.svm, &ctx.mint, &ctx.pool_key, &user1, amount1);
     assert!(result1.is_ok());
+    
 
     // Second user deposits 1500
     let amount2 = 1500;
@@ -238,6 +241,6 @@ fn test_deposit_above_total_limit() -> Result<()> {
     assert!(result3
         .unwrap_err()
         .to_string()
-        .contains("Pool Deposit limit exceeded"));
+        .contains("PoolDepositLimitExceeded"));
     Ok(())
 }

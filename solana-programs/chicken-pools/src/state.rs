@@ -1,24 +1,21 @@
+use borsh::{BorshDeserialize, BorshSerialize};
+use pinocchio::pubkey::Pubkey;
 
-use anchor_lang::prelude::*;
-
-#[derive(Debug, AnchorSerialize, AnchorDeserialize, Clone, Copy, Default, Eq, PartialEq)]
+#[derive(BorshSerialize, BorshDeserialize, PartialEq, Debug, Clone, Copy)]
 pub enum PoolState {
-    #[default]
-    Pending = 0,
-    Started = 1,
-    Ended = 2,
-    Removed = 3,
+    Pending,
+    Started,
+    Ended,
+    Removed,
 }
 
-#[derive(Debug, AnchorSerialize, AnchorDeserialize, Clone, Copy, Default, Eq, PartialEq)]
+#[derive(BorshSerialize, BorshDeserialize, PartialEq, Debug, Clone, Copy)]
 pub enum PoolMode {
-    #[default]
-    LastOutWinner = 0,
-    TimeBased = 1,
+    LastOutWinner,
+    TimeBased,
 }
 
-#[account]
-#[derive(Debug, Default)]
+#[derive(Debug, BorshSerialize, BorshDeserialize)]
 pub struct Pool {
     pub state: PoolState,
     pub bump: u8,
@@ -41,14 +38,29 @@ pub struct Pool {
     pub total_deposit_limit: Option<u64>,
 }
 
-#[account]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, BorshSerialize, BorshDeserialize)]
 pub struct UserPosition {
+    pub bump: u8,
     pub owner: Pubkey,
     pub pool: Pubkey,
     pub collateral_amount: u64,
     pub deposit_amount: u64,
     pub deposit_time: u64,
     pub withdrawn: bool,
+}
+
+impl UserPosition {
+    pub fn new(
+        owner: Pubkey,
+        pool: Pubkey,
+        bump: u8
+    ) -> Self {
+        Self {
+            owner,
+            pool,
+            bump,
+            ..Default::default()
+        }
+    }
 }
 

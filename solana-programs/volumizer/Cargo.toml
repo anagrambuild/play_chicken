@@ -21,10 +21,3 @@ bytemuck = "1.20.0"
 pinocchio = "0.6.0"
 
 [dev-dependencies]
-litesvm = {git = "https://github.com/litesvm/litesvm"}
-test-log = "0.2.16"
-solana-sdk = "2.1.0"
-anyhow = "1.0.71"
-litesvm-token = {git = "https://github.com/litesvm/litesvm"}
-borsh = "0.10.3"
-rand = "0.8.5"

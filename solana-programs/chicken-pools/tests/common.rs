@@ -1,23 +1,26 @@
-use anchor_lang::{prelude::AccountMeta, AnchorSerialize, Discriminator};
-use anchor_spl::associated_token::{self, get_associated_token_address_with_program_id};
 use anyhow::Result;
-use chicken::{
-    actions::InitializePoolArgs,
-    instruction::{Deposit, InitializePool, Withdraw},
-    state::PoolMode,
-    ID,
-};
+use borsh::BorshSerialize;
+use chicken::{actions::InitializePoolArgs, Instruction as ChickenInstruction};
 use litesvm::LiteSVM;
 use litesvm_token::{spl_token, CreateAssociatedTokenAccount, CreateMint, MintTo};
-use solana_program::pubkey::Pubkey;
+
 use solana_sdk::{
-    instruction::Instruction, signature::Keypair, signer::Signer, system_program,
+    instruction::{AccountMeta, Instruction},
+    pubkey::Pubkey,
+    signature::Keypair,
+    signer::Signer,
+    system_program,
     transaction::Transaction,
 };
+use spl_associated_token_account_client::address::get_associated_token_address_with_program_id;
+
+pub fn program_id() -> Pubkey {
+    Pubkey::from(chicken::ID)
+}
 
 pub fn load_program(svm: &mut LiteSVM) -> anyhow::Result<()> {
-    svm.add_program_from_file(ID, "../target/deploy/chicken.so")
-        .map_err(|_| anyhow::anyhow!("Failed to load program"))
+    svm.add_program_from_file(program_id(), "../../target/deploy/chicken.so")
+        .map_err(|e| anyhow::anyhow!("Failed to load program {:?}", e))
 }
 
 pub fn setup_mint(
@@ -67,19 +70,20 @@ pub fn init_pool(
     creator: &Keypair,
     mint: &Pubkey,
     pool: &Pubkey,
-    pool_init_args: &InitializePoolArgs,
+    pool_init_args: InitializePoolArgs,
 ) -> Result<(), anyhow::Error> {
-    let data = InitializePool {
-        args: pool_init_args.to_owned(),
-    };
-    let data = data.try_to_vec()?;
+    let mut writer = std::io::Cursor::new(vec![]);
+    ChickenInstruction::InitializePool(pool_init_args)
+        .serialize(&mut writer)
+        .unwrap();
     let pool_ata = get_associated_token_address_with_program_id(pool, mint, &spl_token::ID);
     let ix = Instruction::new_with_bytes(
-        chicken::ID,
-        &[InitializePool::DISCRIMINATOR.as_ref(), data.as_slice()].concat(),
+        program_id(),
+        writer.get_ref(),
         vec![
             AccountMeta::new(*pool, false),
             AccountMeta::new_readonly(creator.pubkey(), true),
+            AccountMeta::new(creator.pubkey(), true),
             AccountMeta::new(*mint, false),
             AccountMeta::new(pool_ata, false),
             AccountMeta::new_readonly(spl_token::ID, false),
@@ -97,12 +101,17 @@ pub fn init_pool(
     Ok(())
 }
 
-pub fn deposit(
+pub fn deposit(svm: &mut LiteSVM, mint: &Pubkey, pool: &Pubkey, user: &Keypair, amount: u64) -> Result<Pubkey, anyhow::Error> {
+    deposit_logs(svm, mint, pool, user, amount, false)
+}
+
+pub fn deposit_logs(
     svm: &mut LiteSVM,
     mint: &Pubkey,
     pool: &Pubkey,
     user: &Keypair,
     amount: u64,
+    print_logs: bool,
 ) -> Result<Pubkey, anyhow::Error> {
     let user_position = Pubkey::find_program_address(
         &[
@@ -110,22 +119,22 @@ pub fn deposit(
             pool.as_ref(),
             user.pubkey().as_ref(),
         ],
-        &chicken::ID,
+        &program_id(),
     )
     .0;
     let pool_ata = get_associated_token_address_with_program_id(pool, mint, &spl_token::ID);
     let user_ata =
         get_associated_token_address_with_program_id(&user.pubkey(), mint, &spl_token::ID);
+    let mut writer = std::io::Cursor::new(vec![]);
+    ChickenInstruction::Deposit(amount)
+        .serialize(&mut writer)
+        .unwrap();
     let ix = Instruction::new_with_bytes(
-        chicken::ID,
-        &[
-            Deposit::DISCRIMINATOR.as_ref(),
-            amount.to_le_bytes().as_slice(),
-        ]
-        .concat(),
+        program_id(),
+        writer.get_ref(),
         vec![
             AccountMeta::new(*pool, false),
-            AccountMeta::new(user.pubkey(), true),
+            AccountMeta::new_readonly(user.pubkey(), true),
             AccountMeta::new(user.pubkey(), true),
             AccountMeta::new(pool_ata, false),
             AccountMeta::new(user_ata, false),
@@ -141,32 +150,43 @@ pub fn deposit(
         &[&user],
         svm.latest_blockhash(),
     );
-    svm.send_transaction(tx)
+    let res = svm.send_transaction(tx)
         .map_err(|e| anyhow::anyhow!("Failed to send transaction: {:?}", e))?;
+    if print_logs {
+        println!("{:?}", res.logs);
+    }
     Ok(user_position)
 }
 
-pub fn withdraw(
+pub fn withdraw(svm: &mut LiteSVM, pool: &Pubkey, mint: &Pubkey, user: &Keypair) -> Result<(), anyhow::Error> {
+    withdraw_logs(svm, pool, mint, user, false)
+}
+    
+
+pub fn withdraw_logs(
     svm: &mut LiteSVM,
     pool: &Pubkey,
     mint: &Pubkey,
     user: &Keypair,
+    print_logs: bool,
 ) -> Result<(), anyhow::Error> {
+    let mut writer = std::io::Cursor::new(vec![]);
+    ChickenInstruction::Withdraw.serialize(&mut writer).unwrap();
     let user_position = Pubkey::find_program_address(
         &[
             b"user_position".as_ref(),
             pool.as_ref(),
             user.pubkey().as_ref(),
         ],
-        &chicken::ID,
+        &program_id(),
     )
     .0;
     let pool_ata = get_associated_token_address_with_program_id(pool, mint, &spl_token::ID);
     let user_ata =
         get_associated_token_address_with_program_id(&user.pubkey(), mint, &spl_token::ID);
     let ix = Instruction::new_with_bytes(
-        chicken::ID,
-        Withdraw::DISCRIMINATOR.as_ref(),
+        program_id(),
+        writer.get_ref(),
         vec![
             AccountMeta::new(*pool, false),
             AccountMeta::new(user.pubkey(), true),
@@ -174,7 +194,7 @@ pub fn withdraw(
             AccountMeta::new(pool_ata, false),
             AccountMeta::new(user_ata, false),
             AccountMeta::new(user_position, false),
-            AccountMeta::new(*mint, false),
+            AccountMeta::new_readonly(*mint, false),
             AccountMeta::new_readonly(spl_token::ID, false),
             AccountMeta::new_readonly(system_program::ID, false),
         ],
@@ -188,6 +208,9 @@ pub fn withdraw(
     let res = svm
         .send_transaction(tx)
         .map_err(|e| anyhow::anyhow!("Failed to send transaction: {:?}", e))?;
+    if print_logs {
+        println!("{:?}", res.logs);
+    }
     Ok(())
 }
 
@@ -195,6 +218,8 @@ pub struct TestContext {
     pub svm: LiteSVM,
     pub mint: Pubkey,
     pub pool_key: Pubkey,
+    pub pool_id: [u8; 16],
+    pub pool_bump: u8,
     pub pool_ata: Pubkey,
     pub mint_authority: Keypair,
     pub creator: Keypair,
@@ -211,15 +236,14 @@ pub fn setup_test_context() -> Result<TestContext> {
     svm.airdrop(&creator.pubkey(), 10000000).unwrap();
 
     let pool_id = [0; 16];
-    let pool_key = Pubkey::find_program_address(
+    let (pool_key, pool_bump) = Pubkey::find_program_address(
         &[
             b"pool".as_ref(),
             pool_id.as_ref(),
             creator.pubkey().as_ref(),
         ],
-        &ID,
-    )
-    .0;
+        &program_id(),
+    );
 
     let (mint, pool_ata) = setup_mint(&mut svm, &mint_authority, &pool_key)?;
 
@@ -227,13 +251,15 @@ pub fn setup_test_context() -> Result<TestContext> {
         svm,
         mint,
         pool_key,
+        pool_id,
+        pool_bump,
         pool_ata,
         mint_authority,
         creator,
     })
 }
 
-pub fn setup_pool(ctx: &mut TestContext, args: &InitializePoolArgs) -> Result<()> {
+pub fn setup_pool(ctx: &mut TestContext, args: InitializePoolArgs) -> Result<()> {
     init_pool(&mut ctx.svm, &ctx.creator, &ctx.mint, &ctx.pool_key, args)
 }
 
