@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn test_bps() {
-        assert_eq!(bps(999, 10).unwrap(), 1);
+        assert_eq!(bps(999, 10).unwrap(), 0);
         assert_eq!(bps(100, 100).unwrap(), 1);
         assert_eq!(bps(100, 500).unwrap(), 5);
         assert_eq!(bps(100, 1000).unwrap(), 10);

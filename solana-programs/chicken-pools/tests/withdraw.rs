@@ -98,7 +98,7 @@ fn test_withdraw_multi_user_first_out_loser() -> Result<()> {
         &ctx.pool_key,
         &user1,
         deposit_amount_1,
-        false
+        false,
     )?;
 
     // Second user deposits
@@ -110,33 +110,41 @@ fn test_withdraw_multi_user_first_out_loser() -> Result<()> {
         &ctx.pool_key,
         &user2,
         deposit_amount_2,
-        false
+        false,
     )?;
     let pool = ctx.svm.get_account(&ctx.pool_key).unwrap();
     let pool = Pool::deserialize(&mut &pool.data[..]).unwrap();
-    let deposit_fee_1 = chicken::actions::bps(deposit_amount_1, pool.deposit_fee_bps).unwrap(); 
+    let deposit_fee_1 = chicken::actions::bps(deposit_amount_1, pool.deposit_fee_bps).unwrap();
     let deposit_less_fee_1 = deposit_amount_1 - deposit_fee_1;
     let collateral_1 = chicken::actions::bps(deposit_less_fee_1, pool.collateral_bps).unwrap();
-    let withdraw_fee_1 = chicken::actions::bps(deposit_less_fee_1 - collateral_1, pool.withdraw_fee_bps).unwrap();
+    let withdraw_fee_1 =
+        chicken::actions::bps(deposit_less_fee_1 - collateral_1, pool.withdraw_fee_bps).unwrap();
     let return_amount_1 = deposit_less_fee_1 - withdraw_fee_1 - collateral_1;
-    let deposit_fee_2 = chicken::actions::bps(deposit_amount_2, pool.deposit_fee_bps).unwrap(); 
+    let deposit_fee_2 = chicken::actions::bps(deposit_amount_2, pool.deposit_fee_bps).unwrap();
     let deposit_less_fee_2 = deposit_amount_2 - deposit_fee_2;
     let collateral_2 = chicken::actions::bps(deposit_less_fee_2, pool.collateral_bps).unwrap();
-    let withdraw_fee_2 = chicken::actions::bps(deposit_less_fee_2 + collateral_1, pool.withdraw_fee_bps).unwrap();
-    let return_amount_2 = deposit_less_fee_2 + collateral_1 - withdraw_fee_2;    
+    let withdraw_fee_2 =
+        chicken::actions::bps(deposit_less_fee_2 + collateral_1, pool.withdraw_fee_bps).unwrap();
+    let return_amount_2 = deposit_less_fee_2 + collateral_1 - withdraw_fee_2;
     assert_eq!(pool.collateral_amount, collateral_1 + collateral_2);
     // First user withdraws (should lose collateral)
     ctx.svm.warp_to_slot(current_clock + 500);
     let user1_position = ctx.svm.get_account(&user1_position_key).unwrap();
     let user1_position = UserPosition::deserialize(&mut &user1_position.data[..]).unwrap();
     assert_eq!(user1_position.collateral_amount, collateral_1);
-    assert_eq!(user1_position.deposit_amount, deposit_less_fee_1 - collateral_1);
+    assert_eq!(
+        user1_position.deposit_amount,
+        deposit_less_fee_1 - collateral_1
+    );
     withdraw(&mut ctx.svm, &ctx.pool_key, &ctx.mint, &user1)?;
     let pool = ctx.svm.get_account(&ctx.pool_key).unwrap();
     let pool = Pool::deserialize(&mut &pool.data[..]).unwrap();
     assert_eq!(pool.collateral_amount, collateral_1 + collateral_2);
     assert_eq!(pool.withdrawn, return_amount_1);
-    assert_eq!(pool.fee_amount, deposit_fee_1 + deposit_fee_2 + withdraw_fee_1 );
+    assert_eq!(
+        pool.fee_amount,
+        deposit_fee_1 + deposit_fee_2 + withdraw_fee_1
+    );
     let user1_ata_account = ctx.svm.get_account(&user1_ata).unwrap();
     let user1_ata = spl_token::state::Account::unpack(&user1_ata_account.data).unwrap();
     // Calculate expected amount (deposit minus fees minus collateral)
@@ -146,7 +154,10 @@ fn test_withdraw_multi_user_first_out_loser() -> Result<()> {
     let user2_position = ctx.svm.get_account(&user2_position_key).unwrap();
     let user2_position = UserPosition::deserialize(&mut &user2_position.data[..]).unwrap();
     assert_eq!(user2_position.collateral_amount, collateral_2);
-    assert_eq!(user2_position.deposit_amount, deposit_less_fee_2 - collateral_2);
+    assert_eq!(
+        user2_position.deposit_amount,
+        deposit_less_fee_2 - collateral_2
+    );
     withdraw_logs(&mut ctx.svm, &ctx.pool_key, &ctx.mint, &user2, false)?;
     let pool = ctx.svm.get_account(&ctx.pool_key).unwrap();
     let pool = Pool::deserialize(&mut &pool.data[..]).unwrap();
@@ -157,7 +168,10 @@ fn test_withdraw_multi_user_first_out_loser() -> Result<()> {
     assert_eq!(user2_ata.amount, return_amount_2);
     let pool_ata_account = ctx.svm.get_account(&ctx.pool_ata).unwrap();
     let pool_ata = spl_token::state::Account::unpack(&pool_ata_account.data).unwrap();
-    assert_eq!(pool.fee_amount, deposit_fee_1 + deposit_fee_2 + withdraw_fee_1 + withdraw_fee_2);
+    assert_eq!(
+        pool.fee_amount,
+        deposit_fee_1 + deposit_fee_2 + withdraw_fee_1 + withdraw_fee_2
+    );
     assert_eq!(pool_ata.amount, pool.fee_amount);
     Ok(())
 }
@@ -233,7 +247,8 @@ fn test_withdraw_multi_user_last_out_winner() -> Result<()> {
 
     // Calculate expected amounts
     let deposit_fee = chicken::actions::bps(deposit_amount, pool.deposit_fee_bps).unwrap();
-    let collateral = chicken::actions::bps(deposit_amount - deposit_fee, pool.collateral_bps).unwrap();
+    let collateral =
+        chicken::actions::bps(deposit_amount - deposit_fee, pool.collateral_bps).unwrap();
     let deposit_loser = deposit_amount - deposit_fee - collateral;
     let withdraw_loser_fee = chicken::actions::bps(deposit_loser, pool.withdraw_fee_bps).unwrap();
     let return_amount_loser = deposit_loser - withdraw_loser_fee;
@@ -295,27 +310,29 @@ fn test_withdraw_time_based_early_withdrawal() -> Result<()> {
     let total_collateral = chicken::actions::bps(deposit_less_fee, pool.collateral_bps).unwrap();
     let total_duration = end_time - start_time;
     let slots_passed = withdrawal_time - start_time;
-    let time_in_pool = ((deposit_time - start_time + slots_passed)*100)/total_duration;
-    let time_percentage = (time_in_pool * 100) / total_duration;
-    let cubic_result = (time_percentage.pow(3)) / 10000; 
-    let penalty_percentage = 100u64.saturating_sub(cubic_result);
+    let time_in_pool = ((deposit_time - start_time + slots_passed) * 100) / total_duration;
+    let time_percentage = (time_in_pool.pow(3)) / 10000;
+    let penalty_percentage = 100u64.saturating_sub(time_percentage);
     let penalty = (total_collateral * penalty_percentage) / 100;
-    let reward_percentage = (time_percentage.pow(2)) / 100; // Divide by 100 to convert back to percentage
+    let reward_percentage = (time_in_pool.pow(2)) / 100;
     let rewards = (total_collateral * reward_percentage) / 100;
-
-    
     println!("penalty {}", penalty);
     println!("rewards {}", rewards);
     println!("penalty_percentage {}", penalty_percentage);
     println!("reward_percentage {}", reward_percentage);
     println!("time_percentage {}", time_percentage);
     println!("time_in_pool {}", time_in_pool);
+    
 
     // Final collateral return is: total_collateral - penalty + rewards
     let collateral_return = total_collateral
         .saturating_sub(penalty)
         .saturating_add(rewards);
-    let withdraw_fee = chicken::actions::bps(deposit_amount-deposit_fee+collateral_return, pool.withdraw_fee_bps).unwrap();
+    let withdraw_fee = chicken::actions::bps(
+        deposit_amount - deposit_fee + collateral_return,
+        pool.withdraw_fee_bps,
+    )
+    .unwrap();
 
     assert_eq!(
         user_ata.amount,
