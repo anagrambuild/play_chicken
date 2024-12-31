@@ -73,7 +73,7 @@ fn test_bad_token_accounts() -> anyhow::Result<()> {
         collateral_bps: 500,
         max_deposit: None,
         total_deposit_limit: None,
-    };  
+    };
     let init_ix = ChickenInstruction::InitializePool(args);
     init_ix.serialize(&mut writer).unwrap();
     let random_key_pair = Keypair::new();
@@ -97,8 +97,10 @@ fn test_bad_token_accounts() -> anyhow::Result<()> {
         &[&creator],
         svm.latest_blockhash(),
     );
-    let rest_error = svm.send_transaction(tx)
-    .unwrap_err();
-    assert_eq!(rest_error.err.to_string(), "Error processing Instruction 0: custom program error: 0x1");
+    let rest_error = svm.send_transaction(tx).unwrap_err();
+    assert_eq!(
+        rest_error.err.to_string(),
+        "Error processing Instruction 0: custom program error: 0x1"
+    );
     Ok(())
 }

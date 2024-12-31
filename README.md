@@ -1,6 +1,6 @@
 # Chicken Pools - Play Chicken
 
-An evm and solana system to play chicken pools.
+An evm and solana system to play chicken.
 
 ## Directory Structure
 

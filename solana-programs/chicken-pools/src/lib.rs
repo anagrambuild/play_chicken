@@ -39,7 +39,7 @@ fn process_instruction(
             let ctx = accounts::InitializePoolAccounts::context(accounts)?;
             initialize_pool(ctx, args)
         }
-       
+
         Instruction::Deposit(amount) => {
             let ctx = DepositAccounts::context(accounts)?;
             deposit(ctx, amount)
@@ -49,7 +49,7 @@ fn process_instruction(
             withdraw(ctx)
         }
         _ => Err(ChickenError::InvalidInstructionData.into()),
-        
+
         Instruction::RemovePool => {
             let ctx = RemovePoolAccounts::context(accounts)?;
             remove_pool(ctx)

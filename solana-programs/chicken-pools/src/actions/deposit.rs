@@ -1,60 +1,111 @@
+use borsh::{BorshDeserialize, BorshSerialize};
+use pinocchio::{
+    instruction::{Seed, Signer},
+    msg,
+    sysvars::{clock::Clock, rent::Rent, Sysvar},
+    ProgramResult,
+};
+use pinocchio_system::instructions::CreateAccount;
+use pinocchio_token::{
+    instructions::Transfer,
+    state::{Mint, TokenAccount},
+};
+
 use crate::{
+    accounts::{Context, DepositAccounts},
+    assertions::{account_empty, check_self_pda, check_signer, find_self_pda},
     error::ChickenError,
     state::{Pool, UserPosition},
-};
-use anchor_lang::prelude::*;
-use anchor_spl::{
-    token_2022::TransferChecked,
-    token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
 use super::{assert_pool_active, bps, update_pool_state};
 
-#[derive(Accounts)]
-#[instruction(amount: u64)]
-pub struct Deposit<'info> {
-    #[account(mut)]
-    pub pool: Account<'info, Pool>,
-    #[account(mut)]
-    pub user: Signer<'info>,
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    #[account(mut,
-      associated_token::mint = pool.collateral_mint,
-      associated_token::authority = pool,
-      associated_token::token_program = token_program
-    )]
-    pub pool_collateral_token_account: InterfaceAccount<'info, TokenAccount>,
-    #[account(mut,
-      token::mint = pool.collateral_mint,
-      token::authority = user,
-      token::token_program = token_program
-    )]
-    pub user_collateral_token_account: InterfaceAccount<'info, TokenAccount>,
-    #[account(
-      init_if_needed,
-      payer = payer,
-      space = 8 + std::mem::size_of::<UserPosition>(),
-      seeds = [
-        b"user_position".as_ref(),
-        pool.key().as_ref(),
-        user.key().as_ref(),
-      ],
-      bump
-    )]
-    pub user_position: Account<'info, UserPosition>,
-    pub collateral_mint: InterfaceAccount<'info, Mint>,
-    pub token_program: Interface<'info, TokenInterface>,
-    pub system_program: Program<'info, System>,
-}
-
-pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+pub fn deposit(ctx: Context<DepositAccounts>, amount: u64) -> ProgramResult {
     let current_slot = Clock::get()?.slot;
-    let pool = &mut ctx.accounts.pool;
-    let token_account_amount = ctx.accounts.pool_collateral_token_account.amount;
-    update_pool_state(pool, current_slot)?;
-    assert_pool_active(pool)?;
-    let user_position = &mut ctx.accounts.user_position;
+    let pool_account = ctx.accounts.pool;
+    check_signer(ctx.accounts.user, ChickenError::Unauthorized)?;
+    let mut pd = unsafe { pool_account.borrow_mut_data_unchecked() };
+    let mut pool = Pool::try_from_slice(pd).map_err(|e| {
+        msg!("DeserializationError: {:?}", e);
+        ChickenError::DeserializationError
+    })?;
+    let pool_ata = unsafe {
+        TokenAccount::from_account_info_unchecked(ctx.accounts.pool_collateral_token_account)?
+    };
+    let cm_key = ctx.accounts.colateral_mint.key();
+    if pool_ata.mint() != cm_key {
+        return Err(ChickenError::InvalidTokenAccount.into());
+    }
+    if pool_ata.owner() != ctx.accounts.pool.key() {
+        return Err(ChickenError::InvalidTokenAccount.into());
+    }
+    if cm_key != &pool.collateral_mint {
+        return Err(ChickenError::InvalidMint.into());
+    }
+    check_self_pda(
+        &[
+            b"pool".as_ref(),
+            pool.pool_id.as_ref(),
+            pool.creator.as_ref(),
+            &[pool.bump],
+        ],
+        ctx.accounts.pool.key(),
+        ChickenError::InvalidPoolAddress,
+    )?;
+    let fee = bps(amount, pool.deposit_fee_bps)?;
+    let collateral = bps(amount - fee, pool.collateral_bps)?;
+    pool.users += 1;
+    pool.collateral_amount += collateral;
+    pool.fee_amount += fee;
+    let mut user_position = if account_empty(ctx.accounts.user_position) {
+        let bump = find_self_pda(
+            &[
+                b"user_position".as_ref(),
+                ctx.accounts.pool.key().as_ref(),
+                ctx.accounts.user.key().as_ref(),
+            ],
+            ctx.accounts.user_position.key(),
+            ChickenError::InvalidPoolAddress,
+        )?;
+        let lamports_needed = Rent::get()?.minimum_balance(90);
+        CreateAccount {
+            from: ctx.accounts.payer,
+            to: ctx.accounts.user_position,
+            lamports: lamports_needed,
+            space: 90,
+            owner: &crate::ID,
+        }
+        .invoke_signed(&[Signer::from(&[
+            Seed::from(b"user_position".as_ref()),
+            Seed::from(ctx.accounts.pool.key().as_ref()),
+            Seed::from(ctx.accounts.user.key().as_ref()),
+            Seed::from(&[bump]),
+        ])])?;
+        UserPosition::new(*ctx.accounts.user.key(), *ctx.accounts.pool.key(), bump)
+    } else {
+        let upd = unsafe { ctx.accounts.user_position.borrow_mut_data_unchecked() };
+        let up =
+            UserPosition::try_from_slice(upd).map_err(|_| ChickenError::DeserializationError)?;
+        check_self_pda(
+            &[
+                b"user_position".as_ref(),
+                ctx.accounts.pool.key().as_ref(),
+                ctx.accounts.user.key().as_ref(),
+                &[up.bump],
+            ],
+            ctx.accounts.user_position.key(),
+            ChickenError::InvalidPoolPositionAddress,
+        )?;
+        up
+    };
+    if user_position.deposit_time == 0 {
+        user_position.deposit_time = current_slot;
+    }
+    user_position.collateral_amount += collateral;
+    user_position.deposit_amount += amount - fee - collateral;
+    let token_account_amount = pool_ata.amount();
+    update_pool_state(&mut pool, current_slot)?;
+    assert_pool_active(&pool)?;
     if let Some(tdl) = pool.total_deposit_limit {
         if token_account_amount + amount > tdl {
             return Err(ChickenError::PoolDepositLimitExceeded.into());
@@ -65,31 +116,21 @@ pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
             return Err(ChickenError::UserDepositLimitExceeded.into());
         }
     }
-    anchor_spl::token_interface::transfer_checked(
-        CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
-            TransferChecked {
-                from: ctx.accounts.user_collateral_token_account.to_account_info(),
-                to: ctx.accounts.pool_collateral_token_account.to_account_info(),
-                authority: ctx.accounts.user.to_account_info(),
-                mint: ctx.accounts.collateral_mint.to_account_info(),
-            },
-        ),
+    Transfer {
+        from: ctx.accounts.user_collateral_token_account,
+        to: ctx.accounts.pool_collateral_token_account,
+        authority: ctx.accounts.user,
         amount,
-        ctx.accounts.collateral_mint.decimals,
-    )?;
-
-    pool.users += 1;
-    let fee = bps(amount, pool.deposit_fee_bps)?;
-    let collateral = bps(amount - fee, pool.collateral_bps)?;
-    pool.fee_amount += fee;
-    pool.collateral_amount += collateral;
-    if user_position.deposit_time == 0 {
-        user_position.deposit_time = current_slot;
     }
-    user_position.owner = ctx.accounts.user.key();
-    user_position.pool = pool.key();
-    user_position.collateral_amount += collateral;
-    user_position.deposit_amount += amount - fee - collateral;
+    .invoke()?;
+    let mut upd = unsafe { ctx.accounts.user_position.borrow_mut_data_unchecked() };
+    user_position.serialize(&mut &mut upd).map_err(|e| {
+        msg!("{}", e);
+        ChickenError::SerializationError
+    })?;
+    pool.serialize(&mut &mut pd).map_err(|e| {
+        msg!("{}", e);
+        ChickenError::SerializationError
+    })?;
     Ok(())
 }

@@ -1,15 +1,13 @@
+#[cfg(target_os = "solana")]
+use pinocchio::syscalls::*;
 use pinocchio::{
     account_info::AccountInfo,
     program_error::ProgramError,
     pubkey::{create_program_address, find_program_address, Pubkey},
     ProgramResult,
 };
-use std::mem::MaybeUninit;
 use pinocchio_system::ID as SYSTEM_ID;
-#[cfg(target_os = "solana")]
-use pinocchio::syscalls::*;
-
-
+use std::mem::MaybeUninit;
 
 #[cfg(target_os = "solana")]
 #[inline(always)]
@@ -189,8 +187,6 @@ pub fn get_stack_height(expected: u64) -> bool {
 }
 
 #[inline(always)]
-pub fn account_empty(
-    account: &AccountInfo,
-) -> bool {
+pub fn account_empty(account: &AccountInfo) -> bool {
     account.data_len() == 0 && account.lamports() == 0
 }

@@ -43,10 +43,4 @@ RUN rustup toolchain install nightly  && \
 RUN python3 -m pip install slither-analyzer --break-system-packages
 RUN python3 -m pip install mythril --break-system-packages
 
-# Install Anchor
-RUN cargo install --git https://github.com/coral-xyz/anchor avm --locked --force && \
-    avm install latest && \
-    avm use latest && \
-    anchor --version
-
-RUN rustup default 1.79.0   
+RUN rustup default stable
