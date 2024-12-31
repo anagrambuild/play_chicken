@@ -9,8 +9,16 @@ updates:
   - package-ecosystem: "devcontainers"
     directory: "/"
     schedule:
-      interval: weekly
+      interval: monthly
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: monthly
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: monthly
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: monthly

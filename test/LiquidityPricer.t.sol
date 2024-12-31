@@ -9,7 +9,7 @@ import {LiquidityPricer} from "../contracts/LiquidityPricer.sol";
 contract TestLiquidityPricer is Test {
     uint256 public constant PRICE_MAX = 20e18;
 
-    LiquidityPricer publicpricer;
+    LiquidityPricer public pricer;
 
     function setUp() public {
         pricer = new LiquidityPricer(PRICE_MAX);
