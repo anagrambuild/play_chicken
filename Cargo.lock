@@ -245,7 +245,7 @@ dependencies = [
  "bytemuck",
  "getrandom 0.2.15",
  "solana-program 1.18.26",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -304,7 +304,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.8",
  "syn 1.0.109",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -671,7 +671,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "115e54d64eb62cdebad391c19efc9dce4981c690c85a33a12199d99bb9546fee"
 dependencies = [
  "borsh-derive 0.10.4",
- "hashbrown 0.13.2",
+ "hashbrown 0.11.2",
 ]
 
 [[package]]
@@ -1897,6 +1897,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1999,7 +2008,7 @@ dependencies = [
  "ark-bn254",
  "ark-ff",
  "num-bigint 0.4.6",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -2010,12 +2019,12 @@ checksum = "4ee93343901ab17bd981295f2cf0026d4ad018c7c31ba84549a4ddbb47a45104"
 
 [[package]]
 name = "litesvm"
-version = "0.3.0"
-source = "git+https://github.com/litesvm/litesvm#5346e8611b38db5706df337519e0bd97fc5daf52"
+version = "0.4.0"
+source = "git+https://github.com/litesvm/litesvm#1cc04f424f57ffa1382a86c375813f66701ebbcb"
 dependencies = [
  "bincode",
  "indexmap",
- "itertools 0.12.1",
+ "itertools 0.13.0",
  "log",
  "solana-address-lookup-table-program",
  "solana-bpf-loader-program",
@@ -2035,13 +2044,13 @@ dependencies = [
  "solana-system-program",
  "solana-timings",
  "solana-vote-program",
- "thiserror",
+ "thiserror 2.0.9",
 ]
 
 [[package]]
 name = "litesvm-token"
-version = "0.3.0"
-source = "git+https://github.com/litesvm/litesvm#5346e8611b38db5706df337519e0bd97fc5daf52"
+version = "0.4.0"
+source = "git+https://github.com/litesvm/litesvm#1cc04f424f57ffa1382a86c375813f66701ebbcb"
 dependencies = [
  "litesvm",
  "smallvec",
@@ -3048,7 +3057,7 @@ dependencies = [
  "solana-program 2.1.5",
  "solana-program-runtime",
  "solana-sdk 2.1.5",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3083,7 +3092,7 @@ dependencies = [
  "ark-serialize",
  "bytemuck",
  "solana-program 2.1.5",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3120,7 +3129,7 @@ dependencies = [
  "solana-timings",
  "solana-type-overrides",
  "solana_rbpf",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3214,7 +3223,7 @@ dependencies = [
  "bytemuck_derive",
  "curve25519-dalek 4.1.3",
  "solana-program 2.1.5",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3312,7 +3321,7 @@ dependencies = [
  "sha2 0.10.8",
  "solana-frozen-abi-macro",
  "subtle",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3440,7 +3449,7 @@ dependencies = [
  "log",
  "reqwest",
  "solana-sdk 2.1.5",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3481,7 +3490,7 @@ dependencies = [
  "ark-bn254",
  "light-poseidon",
  "solana-define-syscall",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3543,7 +3552,7 @@ dependencies = [
  "solana-frozen-abi",
  "solana-frozen-abi-macro",
  "solana-sdk-macro 1.18.26",
- "thiserror",
+ "thiserror 1.0.69",
  "tiny-bip39",
  "wasm-bindgen",
  "zeroize",
@@ -3618,7 +3627,7 @@ dependencies = [
  "solana-stable-layout",
  "solana-sysvar-id",
  "solana-transaction-error",
- "thiserror",
+ "thiserror 1.0.69",
  "wasm-bindgen",
 ]
 
@@ -3702,7 +3711,7 @@ dependencies = [
  "solana-type-overrides",
  "solana-vote",
  "solana_rbpf",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3757,7 +3766,7 @@ dependencies = [
  "solana-pubkey",
  "solana-sdk 2.1.5",
  "solana-svm-transaction",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3816,7 +3825,7 @@ dependencies = [
  "solana-logger",
  "solana-program 1.18.26",
  "solana-sdk-macro 1.18.26",
- "thiserror",
+ "thiserror 1.0.69",
  "uriparse",
  "wasm-bindgen",
 ]
@@ -3881,7 +3890,7 @@ dependencies = [
  "solana-short-vec",
  "solana-signature",
  "solana-transaction-error",
- "thiserror",
+ "thiserror 1.0.69",
  "wasm-bindgen",
 ]
 
@@ -3919,7 +3928,7 @@ dependencies = [
  "borsh 1.5.3",
  "libsecp256k1",
  "solana-define-syscall",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4075,7 +4084,7 @@ dependencies = [
  "solana-timings",
  "solana-type-overrides",
  "solana-vote",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4165,7 +4174,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "solana-sdk 2.1.5",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4185,7 +4194,7 @@ dependencies = [
  "solana-program 2.1.5",
  "solana-program-runtime",
  "solana-sdk 2.1.5",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4213,7 +4222,7 @@ dependencies = [
  "solana-program 1.18.26",
  "solana-sdk 1.18.26",
  "subtle",
- "thiserror",
+ "thiserror 1.0.69",
  "zeroize",
 ]
 
@@ -4231,7 +4240,7 @@ dependencies = [
  "rand 0.8.5",
  "rustc-demangle",
  "scroll",
- "thiserror",
+ "thiserror 1.0.69",
  "winapi",
 ]
 
@@ -4254,7 +4263,7 @@ dependencies = [
  "solana-program 1.18.26",
  "spl-token 4.0.3",
  "spl-token-2022",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4299,7 +4308,7 @@ dependencies = [
  "quote",
  "sha2 0.10.8",
  "syn 2.0.90",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4334,7 +4343,7 @@ dependencies = [
  "num-traits",
  "solana-program 1.18.26",
  "spl-program-error-derive",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4375,7 +4384,7 @@ dependencies = [
  "num-traits",
  "num_enum",
  "solana-program 1.18.26",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4390,7 +4399,7 @@ dependencies = [
  "num-traits",
  "num_enum",
  "solana-program 2.1.5",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4414,7 +4423,7 @@ dependencies = [
  "spl-token-metadata-interface",
  "spl-transfer-hook-interface",
  "spl-type-length-value",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4588,7 +4597,16 @@ version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6aaf5339b578ea85b50e080feb250a3e8ae8cfcdff9a461c9ec2904bc923f52"
 dependencies = [
- "thiserror-impl",
+ "thiserror-impl 1.0.69",
+]
+
+[[package]]
+name = "thiserror"
+version = "2.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f072643fd0190df67a8bab670c20ef5d8737177d6ac6b2e9a236cb096206b2cc"
+dependencies = [
+ "thiserror-impl 2.0.9",
 ]
 
 [[package]]
@@ -4596,6 +4614,17 @@ name = "thiserror-impl"
 version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.90",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "2.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b50fa271071aae2e6ee85f842e2e28ba8cd2c5fb67f11fcb1fd70b276f9e7d4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4625,7 +4654,7 @@ dependencies = [
  "rand 0.7.3",
  "rustc-hash",
  "sha2 0.9.9",
- "thiserror",
+ "thiserror 1.0.69",
  "unicode-normalization",
  "wasm-bindgen",
  "zeroize",
