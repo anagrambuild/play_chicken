@@ -1,0 +1,28 @@
+name: Solana Program Test
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container: 
+      image: ghcr.io/anagrambuild/solana:v1.18.22_9
+      options: --user root
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: install C compiler
+        run: |
+          apt-get update
+          apt-get install -y -q --no-install-recommends build-essential llvm libclang-dev
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.82.0
+      - name: build solana program artifact
+        run: |
+          cargo build-sbf
+      - name: test solana program
+        run: |
+          cargo test

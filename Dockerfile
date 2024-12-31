@@ -32,7 +32,7 @@ USER foundry
 WORKDIR /workspaces/play_chicken
 
 # Install Rust
-RUN rustup default stable && \
+RUN rustup default 1.82.0 && \
     rustup component add \
     clippy \
     rust-analyzer
@@ -43,4 +43,4 @@ RUN rustup toolchain install nightly  && \
 RUN python3 -m pip install slither-analyzer --break-system-packages
 RUN python3 -m pip install mythril --break-system-packages
 
-RUN rustup default stable
+RUN rustup default 1.82.0
