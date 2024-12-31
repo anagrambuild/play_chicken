@@ -31,5 +31,5 @@ test-log = "0.2.16"
 solana-sdk = "2.1.0"
 anyhow = "1.0.71"
 litesvm-token = {git = "https://github.com/litesvm/litesvm"}
-borsh = "0.10.3"
+borsh = "1.5.3"
 rand = "0.8.5"
