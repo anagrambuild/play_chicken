@@ -188,6 +188,7 @@ contract RewardChickenTest is Test {
             uint256 claimCount,
             uint256 totalBalance,
             uint256 minimumDeposit,
+            uint256 withdrawFee,
             address poolCreator
         ) = chickenPool.chickens(1);
         assertEq(token, MEME_TOKEN);
@@ -197,6 +198,7 @@ contract RewardChickenTest is Test {
         assertEq(rewardDistributed, 0);
         assertEq(claimCount, 0);
         assertEq(totalBalance, 0);
+        assertEq(withdrawFee, 0);
         assertEq(minimumDeposit, DEPOSIT_AMOUNT);
         assertEq(poolCreator, PROTOCOL);
     }
@@ -265,7 +267,7 @@ contract RewardChickenTest is Test {
         vm.stopPrank();
         assertEq(memeToken.balanceOf(PLAYER1), 10 * DEPOSIT_AMOUNT - DEPOSIT_AMOUNT);
         assertEq(memeToken.balanceOf(CHICKEN_POOL), requiredSpend + DEPOSIT_AMOUNT);
-        (,,,,,, uint256 totalBalance,,) = chickenPool.chickens(1);
+        (,,,,,, uint256 totalBalance,,,) = chickenPool.chickens(1);
         assertEq(totalBalance, DEPOSIT_AMOUNT);
         assertEq(chickenPool.totalDeposits(1), DEPOSIT_AMOUNT);
         assertEq(chickenPool.balance(1, PLAYER1), DEPOSIT_AMOUNT);
@@ -367,17 +369,17 @@ contract RewardChickenTest is Test {
         vm.roll(block.number + 3);
         vm.prank(PLAYER1);
         chickenPool.claim(1);
-        (,,,, uint256 rewardDistributed, uint256 claimCount,,,) = chickenPool.chickens(1);
+        (,,,, uint256 rewardDistributed, uint256 claimCount,,,,) = chickenPool.chickens(1);
         assertEq(rewardDistributed, REWARD_AMOUNT * TokenMath.BPS / 60000);
         assertEq(claimCount, 1);
         vm.prank(PLAYER2);
         chickenPool.claim(1);
-        (,,,, rewardDistributed, claimCount,,,) = chickenPool.chickens(1);
+        (,,,, rewardDistributed, claimCount,,,,) = chickenPool.chickens(1);
         assertEq(rewardDistributed, REWARD_AMOUNT / 6 + REWARD_AMOUNT / 3);
         assertEq(claimCount, 2);
         vm.prank(PLAYER3);
         chickenPool.claim(1);
-        (,,,, rewardDistributed, claimCount,,,) = chickenPool.chickens(1);
+        (,,,, rewardDistributed, claimCount,,,,) = chickenPool.chickens(1);
         assertEq(rewardDistributed, REWARD_AMOUNT);
         assertEq(claimCount, 3);
         uint256 balance1 = memeToken.balanceOf(PLAYER1);
@@ -414,17 +416,17 @@ contract RewardChickenTest is Test {
         vm.roll(block.number + 3);
         vm.prank(PLAYER1);
         chickenPool.claim(1);
-        (,,,, uint256 rewardDistributed, uint256 claimCount,,,) = chickenPool.chickens(1);
+        (,,,, uint256 rewardDistributed, uint256 claimCount,,,,) = chickenPool.chickens(1);
         assertEq(rewardDistributed, REWARD_AMOUNT / 3);
         assertEq(claimCount, 1);
         vm.prank(PLAYER2);
         chickenPool.claim(1);
-        (,,,, rewardDistributed, claimCount,,,) = chickenPool.chickens(1);
+        (,,,, rewardDistributed, claimCount,,,,) = chickenPool.chickens(1);
         assertEq(rewardDistributed, REWARD_AMOUNT / 3 + REWARD_AMOUNT / 3);
         assertEq(claimCount, 2);
         vm.prank(PLAYER3);
         chickenPool.claim(1);
-        (,,,, rewardDistributed, claimCount,,,) = chickenPool.chickens(1);
+        (,,,, rewardDistributed, claimCount,,,,) = chickenPool.chickens(1);
         assertEq(rewardDistributed, REWARD_AMOUNT);
         assertEq(claimCount, 3);
         uint256 balance1 = memeToken.balanceOf(PLAYER1);
@@ -464,7 +466,7 @@ contract RewardChickenTest is Test {
         vm.stopPrank();
         assertEq(chickenPool.totalDeposits(1), 2 * DEPOSIT_AMOUNT);
         assertEq(chickenPool.balance(1, PLAYER3), 0);
-        (,,,, uint256 rewardDistributed,,,,) = chickenPool.chickens(1);
+        (,,,, uint256 rewardDistributed,,,,,) = chickenPool.chickens(1);
         assertEq(rewardDistributed, 0);
     }
 
@@ -532,7 +534,7 @@ contract RewardChickenTest is Test {
         chickenPool.withdraw(1);
     }
 
-    function testWithdrawal() public {
+    function testWithdraw() public {
         uint256 requiredSpend = REWARD_AMOUNT + REWARD_AMOUNT.bps(chickenPool.protocolFeeBps());
         vm.prank(PROTOCOL);
         memeToken.approve(CHICKEN_POOL, requiredSpend);
@@ -551,10 +553,42 @@ contract RewardChickenTest is Test {
         chickenPool.withdraw(1);
         assertEq(memeToken.balanceOf(PLAYER1), 10 * DEPOSIT_AMOUNT);
         assertEq(memeToken.balanceOf(CHICKEN_POOL), requiredSpend + DEPOSIT_AMOUNT);
-        (,,,,,, uint256 totalDeposits,,) = chickenPool.chickens(1);
+        (,,,,,, uint256 totalDeposits,,,) = chickenPool.chickens(1);
         assertEq(totalDeposits, DEPOSIT_AMOUNT);
         assertEq(chickenPool.totalDeposits(1), DEPOSIT_AMOUNT);
         assertEq(chickenPool.balance(1, PLAYER1), 0);
+    }
+
+    function testWithdrawWithWithdrawFee() public {
+        uint256 withdrawFeeBps = 100;
+        vm.startPrank(PROTOCOL);
+        chickenPool.setProtocolFee(chickenPool.protocolFeeBps(), withdrawFeeBps);
+        vm.stopPrank();
+        uint256 requiredSpend = REWARD_AMOUNT + REWARD_AMOUNT.bps(chickenPool.protocolFeeBps());
+        vm.prank(PROTOCOL);
+        memeToken.approve(CHICKEN_POOL, requiredSpend);
+        vm.prank(PROTOCOL);
+        chickenPool.start(MEME_TOKEN, block.number + 1, block.number + 2, REWARD_AMOUNT, DEPOSIT_AMOUNT);
+        vm.startPrank(PLAYER1);
+        memeToken.approve(CHICKEN_POOL, DEPOSIT_AMOUNT);
+        chickenPool.join(1, DEPOSIT_AMOUNT);
+        vm.stopPrank();
+        vm.startPrank(PLAYER2);
+        memeToken.approve(CHICKEN_POOL, DEPOSIT_AMOUNT);
+        chickenPool.join(1, DEPOSIT_AMOUNT);
+        vm.stopPrank();
+        vm.roll(block.number + 1);
+        vm.prank(PLAYER1);
+        chickenPool.withdraw(1);
+        uint256 withdrawFee = DEPOSIT_AMOUNT.bps(withdrawFeeBps);
+        uint256 protocolFee = REWARD_AMOUNT.bps(chickenPool.protocolFeeBps());
+        assertEq(memeToken.balanceOf(PLAYER1), 10 * DEPOSIT_AMOUNT - withdrawFee);
+        assertEq(memeToken.balanceOf(CHICKEN_POOL), requiredSpend + DEPOSIT_AMOUNT + withdrawFee);
+        (,,,,,, uint256 totalDeposits,,,) = chickenPool.chickens(1);
+        assertEq(totalDeposits, DEPOSIT_AMOUNT);
+        assertEq(chickenPool.totalDeposits(1), DEPOSIT_AMOUNT);
+        assertEq(chickenPool.balance(1, PLAYER1), 0);
+        assertEq(chickenPool.getProtocolFeeBalance(1), protocolFee + withdrawFee);
     }
 
     function testProtocolWithdrawProtocolFee() public {
@@ -675,9 +709,11 @@ contract RewardChickenTest is Test {
 
     function testSetProtocolFee() public {
         assertEq(chickenPool.protocolFeeBps(), 100);
+        assertEq(chickenPool.withdrawFeeBps(), 0);
         vm.prank(PROTOCOL);
-        chickenPool.setProtocolFee(200);
+        chickenPool.setProtocolFee(200, 333);
         assertEq(chickenPool.protocolFeeBps(), 200);
+        assertEq(chickenPool.withdrawFeeBps(), 333);
     }
 
     function testSetProtocolFeeRequiresProtocol() public {
@@ -686,7 +722,21 @@ contract RewardChickenTest is Test {
                 IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), chickenPool.PROTOCOL_ROLE()
             )
         );
-        chickenPool.setProtocolFee(2000);
+        chickenPool.setProtocolFee(2000, 0);
+    }
+
+    function testSetProtocolFeeExceedsMaximum() public {
+        uint256 maximumFee = chickenPool.MAXIMUM_PROTOCOL_FEE();
+        vm.prank(PROTOCOL);
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.ProtocolFeeExceedsMaximum.selector));
+        chickenPool.setProtocolFee(maximumFee, 0);
+    }
+
+    function testSetWithdrawFeeExceedsMaximum() public {
+        uint256 maximumFee = chickenPool.MAXIMUM_PROTOCOL_FEE();
+        vm.prank(PROTOCOL);
+        vm.expectRevert(abi.encodeWithSelector(RewardChicken.WithdrawFeeExceedsMaximum.selector));
+        chickenPool.setProtocolFee(100, maximumFee);
     }
 
     function testGetProtocolFeeBalance() public {

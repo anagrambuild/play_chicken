@@ -396,6 +396,45 @@ contract PlayChickenTest is Test {
         assertEq(memeToken.balanceOf(PLAYER2), 10 * BUY_IN_AMOUNT - protocolFee + amountSlashed);
     }
 
+    function testWithdrawFee(uint256 withdrawFeeBps) public {
+        vm.assume(withdrawFeeBps < chickenPool.MAXIMUM_PROTOCOL_FEE());
+        vm.startPrank(PROTOCOL);
+        chickenPool.setProtocolFee(chickenPool.protocolFeeBps(), withdrawFeeBps);
+        vm.stopPrank();
+
+        // start a new chicken pool
+        chickenPool.start(MEME_TOKEN, BUY_IN_AMOUNT, SLASHING_PERCENT);
+
+        // join the chicken pool
+        vm.prank(PLAYER1);
+        memeToken.approve(CHICKEN_POOL, BUY_IN_AMOUNT);
+        vm.prank(PLAYER2);
+        memeToken.approve(CHICKEN_POOL, BUY_IN_AMOUNT);
+        vm.prank(PLAYER1);
+        chickenPool.join(1, BUY_IN_AMOUNT);
+        vm.prank(PLAYER2);
+        chickenPool.join(1, BUY_IN_AMOUNT);
+
+        // withdraw from the chicken pool
+        vm.prank(PLAYER1);
+        chickenPool.withdraw(1);
+
+        // claim the reward
+        vm.prank(PLAYER2);
+        chickenPool.claim(1);
+
+        uint256 protocolFee = BUY_IN_AMOUNT.bps(chickenPool.protocolFeeBps());
+        // less fees
+        uint256 playerBalance = BUY_IN_AMOUNT - protocolFee;
+        uint256 withdrawFee = playerBalance.bps(withdrawFeeBps);
+        uint256 amountSlashed = playerBalance.bps(SLASHING_PERCENT);
+        // p1 pays both protocol fee and withdraw fee
+        assertEq(memeToken.balanceOf(PLAYER1), 10 * BUY_IN_AMOUNT - protocolFee - withdrawFee - amountSlashed);
+        // p2 pays only the protocol fee
+        assertEq(memeToken.balanceOf(PLAYER2), 10 * BUY_IN_AMOUNT - protocolFee + amountSlashed);
+        assertEq(chickenPool.getProtocolFeeBalance(1), 2 * protocolFee + withdrawFee);
+    }
+
     function testWithdrawNotInGame() public {
         // start a new chicken pool
         chickenPool.start(MEME_TOKEN, BUY_IN_AMOUNT, SLASHING_PERCENT);
@@ -801,7 +840,7 @@ contract PlayChickenTest is Test {
     function testSetProtocolFee() public {
         assertEq(chickenPool.protocolFeeBps(), 100);
         vm.prank(PROTOCOL);
-        chickenPool.setProtocolFee(200);
+        chickenPool.setProtocolFee(200, 0);
         assertEq(chickenPool.protocolFeeBps(), 200);
     }
 
@@ -811,7 +850,21 @@ contract PlayChickenTest is Test {
                 IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), chickenPool.PROTOCOL_ROLE()
             )
         );
-        chickenPool.setProtocolFee(2000);
+        chickenPool.setProtocolFee(2000, 0);
+    }
+
+    function testSetProtocolFeeExceedsMaximum() public {
+        uint256 maximumFee = chickenPool.MAXIMUM_PROTOCOL_FEE();
+        vm.prank(PROTOCOL);
+        vm.expectRevert(abi.encodeWithSelector(PlayChicken.ProtocolFeeExceedsMaximum.selector));
+        chickenPool.setProtocolFee(maximumFee, 0);
+    }
+
+    function testSetWithdrawFeeExceedsMaximum() public {
+        uint256 maximumFee = chickenPool.MAXIMUM_PROTOCOL_FEE();
+        vm.prank(PROTOCOL);
+        vm.expectRevert(abi.encodeWithSelector(PlayChicken.WithdrawFeeExceedsMaximum.selector));
+        chickenPool.setProtocolFee(100, maximumFee);
     }
 
     function testGetProtocolFeeBalance() public {

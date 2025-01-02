@@ -23,11 +23,12 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
     uint256 public constant MINIMUM_REWARD_AMOUNT = 100 * TokenMath.TOKEN_BASE_QTY; // 100 token
     uint256 public constant MINIMUM_DEPOSIT_AMOUNT = 1 * TokenMath.TOKEN_BASE_QTY; // 1 token
     uint256 public constant MINIMUM_PROTOCOL_FEE = 50; // 0.5%
+    uint256 public constant MAXIMUM_PROTOCOL_FEE = 2500; // 25%
 
-    event ProtocolFeeChanged(uint256 protocolFee);
+    event ProtocolFeeChanged(uint256 protocolFee, uint256 withdrawlFee);
     event ProtocolFeeWithdrawn(uint256 amount, address token);
     event PlayerClaimedReward(uint256 chickenId, address player, uint256 reward);
-    event PlayerChickendOut(uint256 chickenId, address player, uint256 amount);
+    event PlayerChickendOut(uint256 chickenId, address player, uint256 amount, uint256 withdrawFee);
     event ChickenStarted(uint256 chickenId, uint256 start, uint256 end, uint256 reward, address token, address createdBy);
     event PlayerJoined(uint256 chickenId, address player, uint256 totalDeposits);
 
@@ -47,6 +48,8 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
     error PlayerIsNotInChickenPool(address player);
     error InsufficientFunds();
     error ProtocolFeeTooLow();
+    error ProtocolFeeExceedsMaximum();
+    error WithdrawFeeExceedsMaximum();
 
     struct Chicken {
         address token;
@@ -57,10 +60,12 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
         uint256 claimCount;
         uint256 totalDeposits;
         uint256 minimumDeposit;
+        uint256 withdrawFee;
         address poolCreator;
     }
 
     uint256 public protocolFeeBps; // protocol fee in bps
+    uint256 public withdrawFeeBps; // withdraw fee in bps
 
     uint256 public chickenCount;
 
@@ -92,6 +97,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
         _grantRole(PAUSER_ROLE, _owner);
         chickenCount = 0;
         protocolFeeBps = 100; // 1%
+        withdrawFeeBps = 0;
     }
 
     /**
@@ -130,6 +136,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
         chicken.rewardDistributed = 0;
         chicken.totalDeposits = 0;
         chicken.minimumDeposit = _minimumDeposit;
+        chicken.withdrawFee = 0;
         chicken.poolCreator = msg.sender;
         emit ChickenStarted(chickenCount, _start, _end, _rewardAmount, _token, msg.sender);
     }
@@ -209,13 +216,16 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
 
         uint256 currentBalance = playerBalance[_chickenId][msg.sender];
         require(currentBalance > 0, InsufficientFunds());
+
+        uint256 withdrawFee = currentBalance.bps(withdrawFeeBps);
+        chicken.withdrawFee += withdrawFee;
         chicken.totalDeposits -= currentBalance;
         playerBalance[_chickenId][msg.sender] = 0;
         delete playerBalance[_chickenId][msg.sender];
         removePlayer(_chickenId, msg.sender);
-
-        SafeERC20.safeTransfer(IERC20(chicken.token), msg.sender, currentBalance);
-        emit PlayerChickendOut(_chickenId, msg.sender, currentBalance);
+        uint256 playerRefund = currentBalance - withdrawFee;
+        SafeERC20.safeTransfer(IERC20(chicken.token), msg.sender, playerRefund);
+        emit PlayerChickendOut(_chickenId, msg.sender, playerRefund, withdrawFee);
     }
 
     /**
@@ -267,11 +277,15 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
      * Set protocol fee in bps for the PlayChicken contract
      * @dev only the protocol can set the protocol fee
      * @param _protocolFee protocol fee in bps
+     * @param _withdrawlFee withdrawl fee in bps
      */
-    function setProtocolFee(uint256 _protocolFee) external onlyRole(PROTOCOL_ROLE) {
+    function setProtocolFee(uint256 _protocolFee, uint256 _withdrawlFee) external onlyRole(PROTOCOL_ROLE) {
         require(_protocolFee >= MINIMUM_PROTOCOL_FEE, ProtocolFeeTooLow());
+        require(_protocolFee < MAXIMUM_PROTOCOL_FEE, ProtocolFeeExceedsMaximum());
+        require(_withdrawlFee < MAXIMUM_PROTOCOL_FEE, WithdrawFeeExceedsMaximum());
         protocolFeeBps = _protocolFee;
-        emit ProtocolFeeChanged(_protocolFee);
+        withdrawFeeBps = _withdrawlFee;
+        emit ProtocolFeeChanged(_protocolFee, _withdrawlFee);
     }
 
     /**
@@ -280,7 +294,8 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
      */
     function getProtocolFeeBalance(uint256 _chickenId) external view returns (uint256) {
         Chicken storage chicken = chickens[_chickenId];
-        return chicken.rewardAmount.bps(protocolFeeBps);
+        uint256 rewardFee = chicken.rewardAmount.bps(protocolFeeBps);
+        return rewardFee + chicken.withdrawFee;
     }
 
     /**
