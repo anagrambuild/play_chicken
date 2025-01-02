@@ -13,6 +13,8 @@ pub use init::*;
 pub use remove_pool::*;
 pub use withdraw::*;
 
+pub const BPS: u128 = 10_000;
+
 #[inline(always)]
 pub fn update_pool_state(pool: &mut Pool, current_slot: u64) -> Result<(), ChickenError> {
     if pool.state == PoolState::Removed {
@@ -52,7 +54,7 @@ pub fn bps(amount: u64, bps: u16) -> Result<u64, ChickenError> {
     Ok((amount as u128)
         .checked_mul(bps as u128)
         .ok_or(ChickenError::InvalidNumericConversion)?
-        .checked_div(10_000)
+        .checked_div(BPS)
         .ok_or(ChickenError::InvalidNumericConversion)? as u64)
 }
 

@@ -119,11 +119,13 @@ pub fn withdraw(ctx: Context<WithdrawAccounts>) -> ProgramResult {
                 .checked_mul(100)
                 .and_then(|val| val.checked_div(total_deposits))
                 .unwrap_or_default();
+            msg!("user deposit percentage {}", user_deposit_percentage);
 
             let pool_collateral_amount = pool
                 .collateral_amount
                 .checked_sub(collateral_refund)
                 .unwrap_or_default();
+            msg!("collateral to pool {}", pool_collateral_amount);
 
             let user_collateral_amount = pool_collateral_amount
                 .checked_mul(user_deposit_percentage)

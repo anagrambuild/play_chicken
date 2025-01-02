@@ -4,9 +4,9 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
-  test:
+  solana_cdtest:
     runs-on: ubuntu-latest
-    container: 
+    container:
       image: ghcr.io/anagrambuild/solana:v1.18.22_9
       options: --user root
     steps:
@@ -15,7 +15,8 @@ jobs:
       - name: install C compiler
         run: |
           apt-get update
-          apt-get install -y -q --no-install-recommends build-essential llvm libclang-dev
+          apt-get install -y -q --no-install-recommends build-essential llvm libclang-dev libudev-dev pkg-config
+          apg-get clean
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
