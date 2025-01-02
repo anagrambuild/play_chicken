@@ -15,7 +15,8 @@
 				"fill-labs.dependi",
 				"vadimcn.vscode-lldb",
 				"JuanBlanco.solidity",
-				"yzhang.markdown-all-in-one"
+				"yzhang.markdown-all-in-one",
+				"ms-toolsai.jupyter"
 			]
 		}
 	},
