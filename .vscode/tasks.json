@@ -79,7 +79,7 @@
         {
             "label": "test",
             "type": "shell",
-            "command": "forge test -vvv",
+            "command": "forge test -v",
             "options": {
                 "cwd": "${workspaceFolder}"
             },

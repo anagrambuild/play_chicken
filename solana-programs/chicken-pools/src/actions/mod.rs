@@ -14,6 +14,7 @@ pub use remove_pool::*;
 pub use withdraw::*;
 
 pub const BPS: u128 = 10_000;
+pub const BPS_ROUNDING_ERROR: u128 = BPS / 2;
 
 #[inline(always)]
 pub fn update_pool_state(pool: &mut Pool, current_slot: u64) -> Result<(), ChickenError> {
@@ -54,6 +55,8 @@ pub fn bps(amount: u64, bps: u16) -> Result<u64, ChickenError> {
     Ok((amount as u128)
         .checked_mul(bps as u128)
         .ok_or(ChickenError::InvalidNumericConversion)?
+        .checked_add(BPS_ROUNDING_ERROR)
+        .ok_or(ChickenError::InvalidNumericConversion)?
         .checked_div(BPS)
         .ok_or(ChickenError::InvalidNumericConversion)? as u64)
 }
@@ -64,7 +67,7 @@ mod tests {
 
     #[test]
     fn test_bps() {
-        assert_eq!(bps(999, 10).unwrap(), 0);
+        assert_eq!(bps(999, 10).unwrap(), 1);
         assert_eq!(bps(100, 100).unwrap(), 1);
         assert_eq!(bps(100, 500).unwrap(), 5);
         assert_eq!(bps(100, 1000).unwrap(), 10);

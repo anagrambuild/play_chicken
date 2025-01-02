@@ -10,11 +10,14 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {Test} from "forge-std/Test.sol";
 
 import {PlayChicken} from "../contracts/PlayChicken.sol";
+import {TokenMath} from "../contracts/TokenMath.sol";
 
 import {ERC20Mock} from "./ERC20Mock.sol";
 
 contract PlayChickenTest is Test {
-    uint256 public constant MAX_SUPPLY = 1000000 * 10 ** 18;
+    using TokenMath for uint256;
+
+    uint256 public constant MAX_SUPPLY = 1000000 * TokenMath.TOKEN_BASE_QTY;
 
     // these are used as constants but initialized in setUp
     address public CHICKEN_POOL;
@@ -162,7 +165,7 @@ contract PlayChickenTest is Test {
         vm.prank(PLAYER2);
         chickenPool.join(1, BUY_IN_AMOUNT);
 
-        uint256 protocolFee = BUY_IN_AMOUNT * chickenPool.protocolFeeBps() / chickenPool.BPS();
+        uint256 protocolFee = BUY_IN_AMOUNT.bps(chickenPool.protocolFeeBps());
 
         // check the balance of the chicken pool
         assertEq(chickenPool.totalDeposits(1), 2 * BUY_IN_AMOUNT - 2 * protocolFee);
@@ -254,7 +257,7 @@ contract PlayChickenTest is Test {
         vm.prank(PLAYER2);
         chickenPool.join(1, BUY_IN_AMOUNT);
 
-        uint256 protocolFee = BUY_IN_AMOUNT * chickenPool.protocolFeeBps() / chickenPool.BPS();
+        uint256 protocolFee = BUY_IN_AMOUNT.bps(chickenPool.protocolFeeBps());
         (,,,,, uint256 feeCollected,) = chickenPool.chickens(1);
 
         // check the balance of the chicken pool
@@ -294,7 +297,7 @@ contract PlayChickenTest is Test {
 
         assertEq(chickenPool.getPlayerCount(1), 1);
 
-        uint256 protocolFee = BUY_IN_AMOUNT * chickenPool.protocolFeeBps() / chickenPool.BPS();
+        uint256 protocolFee = BUY_IN_AMOUNT.bps(chickenPool.protocolFeeBps());
         assertEq(chickenPool.balance(1, PLAYER1), 2 * BUY_IN_AMOUNT - 2 * protocolFee);
     }
 
@@ -316,9 +319,9 @@ contract PlayChickenTest is Test {
         vm.prank(PLAYER1);
         chickenPool.withdraw(1);
 
-        uint256 protocolFee = BUY_IN_AMOUNT * chickenPool.protocolFeeBps() / chickenPool.BPS();
+        uint256 protocolFee = BUY_IN_AMOUNT.bps(chickenPool.protocolFeeBps());
         uint256 playerBalance = BUY_IN_AMOUNT - protocolFee;
-        uint256 amountSlashed = playerBalance * SLASHING_PERCENT / chickenPool.BPS();
+        uint256 amountSlashed = playerBalance.bps(SLASHING_PERCENT);
 
         assertEq(memeToken.balanceOf(PLAYER1), 10 * BUY_IN_AMOUNT - protocolFee - amountSlashed);
     }
@@ -386,9 +389,9 @@ contract PlayChickenTest is Test {
         vm.prank(PLAYER2);
         chickenPool.claim(1);
 
-        uint256 protocolFee = BUY_IN_AMOUNT * chickenPool.protocolFeeBps() / chickenPool.BPS();
+        uint256 protocolFee = BUY_IN_AMOUNT.bps(chickenPool.protocolFeeBps());
         uint256 playerBalance = BUY_IN_AMOUNT - protocolFee;
-        uint256 amountSlashed = playerBalance * SLASHING_PERCENT / chickenPool.BPS();
+        uint256 amountSlashed = playerBalance.bps(SLASHING_PERCENT);
 
         assertEq(memeToken.balanceOf(PLAYER2), 10 * BUY_IN_AMOUNT - protocolFee + amountSlashed);
     }
@@ -668,10 +671,6 @@ contract PlayChickenTest is Test {
         assertEq(chickenPool.protocolFeeBps(), 100);
     }
 
-    function testBPSis10000() public view {
-        assertEq(chickenPool.BPS(), 10000);
-    }
-
     function testJoinWithInvalidChickenId() public {
         // try to join a chicken pool with invalid chicken id
         vm.expectRevert(abi.encodeWithSelector(PlayChicken.ChickenIdInvalid.selector, 0));
@@ -723,7 +722,7 @@ contract PlayChickenTest is Test {
         vm.prank(PROTOCOL);
         chickenPool.withdrawProtocolFee(1);
 
-        uint256 protocolFee = BUY_IN_AMOUNT * chickenPool.protocolFeeBps() / chickenPool.BPS();
+        uint256 protocolFee = BUY_IN_AMOUNT.bps(chickenPool.protocolFeeBps());
         assertEq(memeToken.balanceOf(PROTOCOL), 2 * protocolFee);
     }
 
@@ -792,7 +791,7 @@ contract PlayChickenTest is Test {
         vm.prank(PLAYER2);
         chickenPool.join(1, BUY_IN_AMOUNT);
 
-        uint256 protocolFee = BUY_IN_AMOUNT * chickenPool.protocolFeeBps() / chickenPool.BPS();
+        uint256 protocolFee = BUY_IN_AMOUNT.bps(chickenPool.protocolFeeBps());
         uint256 playerBalance = BUY_IN_AMOUNT - protocolFee;
 
         assertEq(chickenPool.balance(1, PLAYER1), playerBalance);
@@ -829,7 +828,7 @@ contract PlayChickenTest is Test {
         vm.prank(PLAYER2);
         chickenPool.join(1, BUY_IN_AMOUNT);
 
-        uint256 protocolFee = BUY_IN_AMOUNT * chickenPool.protocolFeeBps() / chickenPool.BPS();
+        uint256 protocolFee = BUY_IN_AMOUNT.bps(chickenPool.protocolFeeBps());
         assertEq(chickenPool.getProtocolFeeBalance(1), 2 * protocolFee);
     }
 

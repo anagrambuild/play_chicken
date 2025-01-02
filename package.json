@@ -25,7 +25,7 @@
     "url": "https://github.com/anagrambuild/play_chicken/issues"
   },
   "devDependencies": {
-    "solhint": "^5.0.3"
+    "solhint": "5.0.4"
   },
   "homepage": "https://github.com/anagrambuild/play_chicken#readme"
 }

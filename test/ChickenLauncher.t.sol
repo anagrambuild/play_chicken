@@ -11,8 +11,11 @@ import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Pau
 import {Test, console} from "forge-std/Test.sol";
 
 import {ChickenLauncher} from "../contracts/ChickenLauncher.sol";
+import {TokenMath} from "../contracts/TokenMath.sol";
 
 contract ChickenLauncherTest is Test {
+    using TokenMath for uint256;
+
     address public CHICKEN_LAUNCHER;
     address public CHICKEN_ADMIN;
     ChickenLauncher public launcher;
@@ -97,11 +100,16 @@ contract ChickenLauncherTest is Test {
     function testLaunchNewToken() public {
         vm.expectEmit();
         emit ChickenLauncher.TokenCreated(
-            0x2946259E0334f33A064106302415aD3391BeD384, "Chicken", "CHICKEN", 1000 * 10 ** 18, CHICKEN_ADMIN, 10000 * 10 ** 18
+            0x2946259E0334f33A064106302415aD3391BeD384,
+            "Chicken",
+            "CHICKEN",
+            uint256(1000).tokens(),
+            CHICKEN_ADMIN,
+            uint256(10000).tokens()
         );
-        address chicken = launcher.launch("Chicken", "CHICKEN", 1000 * 10 ** 18, CHICKEN_ADMIN, 10000 * 10 ** 18);
+        address chicken = launcher.launch("Chicken", "CHICKEN", uint256(1000).tokens(), CHICKEN_ADMIN, uint256(10000).tokens());
         IERC20 chickenToken = IERC20(chicken);
-        assertEq(chickenToken.totalSupply(), 1000 * 10 ** 18);
+        assertEq(chickenToken.totalSupply(), uint256(1000).tokens());
     }
 
     function mockChickenLauncher(address _launcher) internal {

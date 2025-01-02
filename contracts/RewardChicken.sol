@@ -10,17 +10,18 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/ut
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
+import {TokenMath} from "./TokenMath.sol";
+
 contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
+    using TokenMath for uint256;
 
     bytes32 public constant PROTOCOL_ROLE = keccak256("PROTOCOL_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
-    uint256 public constant BPS = 10000;
-    uint256 public constant BASE_AMOUNT = 10 ** 18;
-    uint256 public constant MINIMUM_REWARD_AMOUNT = 100 * BASE_AMOUNT; // 100 token
-    uint256 public constant MINIMUM_DEPOSIT_AMOUNT = 1 * BASE_AMOUNT; // 1 token
+    uint256 public constant MINIMUM_REWARD_AMOUNT = 100 * TokenMath.TOKEN_BASE_QTY; // 100 token
+    uint256 public constant MINIMUM_DEPOSIT_AMOUNT = 1 * TokenMath.TOKEN_BASE_QTY; // 1 token
     uint256 public constant MINIMUM_PROTOCOL_FEE = 50; // 0.5%
 
     event ProtocolFeeChanged(uint256 protocolFee);
@@ -113,7 +114,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
         require(_minimumDeposit >= MINIMUM_DEPOSIT_AMOUNT, MinimumDepositMustBeLarger(MINIMUM_DEPOSIT_AMOUNT));
 
         IERC20 poolToken = IERC20(_token);
-        uint256 feeRequiredByProtocol = (_rewardAmount * protocolFeeBps) / BPS;
+        uint256 feeRequiredByProtocol = _rewardAmount.bps(protocolFeeBps);
         uint256 depositAmount = feeRequiredByProtocol + _rewardAmount;
         uint256 authorizedAmount = poolToken.allowance(msg.sender, address(this));
         require(depositAmount <= authorizedAmount, RewardAndProtocolFeeNotMet(_rewardAmount, feeRequiredByProtocol));
@@ -230,7 +231,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
         onlyValidChickenPool(_chickenId)
     {
         Chicken storage chicken = chickens[_chickenId];
-        uint256 feeBalance = chicken.rewardAmount * protocolFeeBps / BPS;
+        uint256 feeBalance = chicken.rewardAmount.bps(protocolFeeBps);
         require(feeBalance > 0, InsufficientFunds());
         SafeERC20.safeTransfer(IERC20(chicken.token), msg.sender, feeBalance);
         emit ProtocolFeeWithdrawn(feeBalance, chicken.token);
@@ -279,7 +280,7 @@ contract RewardChicken is Initializable, AccessControlUpgradeable, PausableUpgra
      */
     function getProtocolFeeBalance(uint256 _chickenId) external view returns (uint256) {
         Chicken storage chicken = chickens[_chickenId];
-        return chicken.rewardAmount * protocolFeeBps / BPS;
+        return chicken.rewardAmount.bps(protocolFeeBps);
     }
 
     /**

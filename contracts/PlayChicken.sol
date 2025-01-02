@@ -10,18 +10,19 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/ut
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
+import {TokenMath} from "./TokenMath.sol";
+
 contract PlayChicken is Initializable, AccessControlUpgradeable, PausableUpgradeable, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
+    using TokenMath for uint256;
 
     bytes32 public constant PROTOCOL_ROLE = keccak256("PROTOCOL_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
-    uint256 public constant BPS = 10000;
-    uint256 public constant BASE_AMOUNT = 10 ** 18;
-    uint256 public constant MINIMUM_BUY_IN = 100 * BASE_AMOUNT;
+    uint256 public constant MINIMUM_BUY_IN = 100 * TokenMath.TOKEN_BASE_QTY; // 100 * TOKEN_BASE
     // bps slashed on forfeit
-    uint256 public constant MINIMUM_SLASHING_PERCENT = 1000; // 10%
+    uint256 public constant MINIMUM_SLASHING_PERCENT = 10 * TokenMath.PERCENT; // 10%
     uint256 public constant MINIMUM_PROTOCOL_FEE = 50; // 0.5%
 
     event ProtocolFeeChanged(uint256 protocolFee);
@@ -127,7 +128,7 @@ contract PlayChicken is Initializable, AccessControlUpgradeable, PausableUpgrade
         uint256 authorizedAmount = IERC20(chicken.token).allowance(msg.sender, address(this));
         require(_deposit <= authorizedAmount, DepositNotAuthorized(chicken.buyIn));
         IERC20(chicken.token).safeTransferFrom(msg.sender, address(this), _deposit);
-        uint256 protocolFee = _deposit * protocolFeeBps / BPS;
+        uint256 protocolFee = _deposit.bps(protocolFeeBps);
         uint256 netDeposit = _deposit - protocolFee;
         playerBalance[_chickenId][msg.sender] += netDeposit;
         chicken.protocolFee += protocolFee;
@@ -152,7 +153,7 @@ contract PlayChicken is Initializable, AccessControlUpgradeable, PausableUpgrade
         require(getPlayerCount(_chickenId) > 1, PlayerIsWinner());
         uint256 deposit = playerBalance[_chickenId][msg.sender];
         require(deposit > 0, InsufficientFunds());
-        uint256 slashingAmount = deposit * chicken.slashingPercent / BPS;
+        uint256 slashingAmount = deposit.bps(chicken.slashingPercent);
         uint256 withdrawAmount = deposit - slashingAmount;
         chicken.totalDeposits -= deposit;
         chicken.rewardQuantity += slashingAmount;
