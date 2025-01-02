@@ -4,7 +4,7 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
-  solana_cdtest:
+  solana_citest:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/anagrambuild/solana:v1.18.22_9
@@ -16,7 +16,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y -q --no-install-recommends build-essential llvm libclang-dev libudev-dev pkg-config
-          apg-get clean
+          apt-get clean
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
