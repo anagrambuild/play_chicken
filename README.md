@@ -4,11 +4,12 @@ An evm and solana system to play chicken.
 
 ## Directory Structure
 
-contracts - contains the solidity smart contracts
-programs - contains the solana programs
-test - contains the tests for the both evm and solana programs
-lib - contains the libraries used by the solidity smart contracts and libraries for the solana programs
-script - cotains the foundry scripts used to deploy the contracts
+
+contracts - contains the solidity smart contracts</br>
+solana-programs - contains the solana programs</br>
+test - contains the tests for the both evm and solana programs</br>
+lib - contains the libraries used by the solidity smart contracts and libraries for the solana programs</br>
+script - cotains the foundry scripts used to deploy the contracts</br>
 
 [![CI](https://github.com/anagrambuild/play_chicken/actions/workflows/forge-ci.yml/badge.svg)](https://github.com/anagrambuild/play_chicken/actions/workflows/forge-ci.yml)
 [![commitlint](https://github.com/anagrambuild/play_chicken/actions/workflows/commit-lint.yml/badge.svg)](https://github.com/anagrambuild/play_chicken/actions/workflows/commit-lint.yml)

@@ -24,7 +24,7 @@ ENV USER=foundry
 ENV PATH=${PATH}:/home/${USER}/.cargo/bin
 
 # Solana
-ARG SOLANA_VERSION=1.18.22
+ARG SOLANA_VERSION=2.0.21
 COPY --chown=${USER}:${USER} --from=ghcr.io/anagrambuild/solana:latest /home/solana/.local/share/solana/install/releases/${SOLANA_VERSION} /home/${USER}/.local/share/solana/install/releases/${SOLANA_VERSION}
 ENV PATH=${PATH}:/usr/local/cargo/bin:/go/bin:/home/${USER}/.local/share/solana/install/releases/${SOLANA_VERSION}/bin
 
